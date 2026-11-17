@@ -1,0 +1,78 @@
+code: corporate
+name: "Corporate & SME Profile"
+hosting_mode_default: lan_with_cloud_backup
+air_gapped_enforced: false
+write_down_mode: advisory
+
+branding:
+  organization_name: "Enterprise Document Hub"
+  short_name: "SENTINEL CORP"
+  primary_color: "#18181B"
+  accent_color: "#0D9488"
+  banner_text_prefix: "CORPORATE WORKSPACE"
+  locale: en
+
+terminology:
+  cabinet: "Cabinet"
+  folder: "Folder"
+  document: "Document"
+  unit: "Department"
+  registry_item: "Log Entry"
+  approver: "Manager / Approver"
+
+security:
+  mfa_required: false
+  session_idle_minutes: 60
+  step_up_ttl_minutes: 10
+  max_failed_logins: 5
+  lockout_minutes: 15
+  two_person_default_rank: 2
+  hsm_required: false
+
+clearance_ladder:
+  - rank: 0
+    code: PUBLIC
+    name: "Public"
+    color_hex: "#16A34A"
+    watermark_mode: none
+    two_person_required: false
+    secure_print_required: false
+    cloud_sync_allowed: true
+    e2ee_required: false
+  - rank: 1
+    code: INTERNAL
+    name: "Internal"
+    color_hex: "#2563EB"
+    watermark_mode: none
+    two_person_required: false
+    secure_print_required: false
+    cloud_sync_allowed: true
+    e2ee_required: false
+  - rank: 2
+    code: CONFIDENTIAL
+    name: "Confidential"
+    color_hex: "#DC2626"
+    watermark_mode: diagonal
+    two_person_required: true
+    secure_print_required: true
+    cloud_sync_allowed: false
+    e2ee_required: false
+
+default_compartments:
+  - code: EXEC
+    name: "Executive & Board"
+    description: "Board packs, M&A diligence, and strategic plans."
+  - code: FINANCE
+    name: "Finance & Contracts"
+    description: "Supplier contracts, audits, and tax filings."
+
+features:
+  correspondence_registry: false
+  ap_automation: true
+  zimra_e_invoicing: true
+  contracts_lifecycle: true
+  hr_vault: true
+  cloud_sync: true
+  cloud_ai: false
+  two_person_strict: false
+  secure_print_default: false

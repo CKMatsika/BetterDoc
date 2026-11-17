@@ -1,0 +1,12 @@
+# Air-Gapped Override: forces zero external egress from all backend workers & disables update checks.
+services:
+  app:
+    environment:
+      SENTINEL_AIR_GAPPED: "true"
+      SENTINEL_HOSTING_MODE: "air_gapped_on_prem"
+  horizon:
+    environment:
+      SENTINEL_AIR_GAPPED: "true"
+  clamav:
+    environment:
+      CLAMAV_NO_FRESHCLAM: "true"

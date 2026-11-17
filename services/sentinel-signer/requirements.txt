@@ -1,0 +1,10 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pyhanko==0.26.0
+pyhanko-certvalidator==0.26.8
+cryptography==45.0.3
+pymupdf>=1.25.2
+qrcode==8.0
+Pillow>=11.1.0
+httpx==0.28.1
+python-pkcs11==0.7.0

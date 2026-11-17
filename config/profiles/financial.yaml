@@ -1,0 +1,93 @@
+code: financial
+name: "Financial Services & Microfinance Profile"
+hosting_mode_default: lan_with_cloud_backup
+air_gapped_enforced: false
+write_down_mode: advisory
+
+branding:
+  organization_name: "Golden Knot Financial Holdings"
+  short_name: "GOLDEN KNOT DMS"
+  primary_color: "#1E293B"
+  accent_color: "#D97706"
+  banner_text_prefix: "REGULATED FINANCIAL VAULT"
+  locale: en
+
+terminology:
+  cabinet: "Department Vault"
+  folder: "Case / Dossier"
+  document: "Record"
+  unit: "Branch / Division"
+  registry_item: "Client Correspondence"
+  approver: "Compliance / Credit Approver"
+
+security:
+  mfa_required: true
+  session_idle_minutes: 20
+  step_up_ttl_minutes: 5
+  max_failed_logins: 5
+  lockout_minutes: 15
+  two_person_default_rank: 3
+  hsm_required: false
+
+clearance_ladder:
+  - rank: 0
+    code: PUBLIC
+    name: "Public"
+    color_hex: "#16A34A"
+    watermark_mode: none
+    two_person_required: false
+    secure_print_required: false
+    cloud_sync_allowed: true
+    e2ee_required: false
+  - rank: 1
+    code: INTERNAL
+    name: "Internal"
+    color_hex: "#2563EB"
+    watermark_mode: footer
+    two_person_required: false
+    secure_print_required: false
+    cloud_sync_allowed: true
+    e2ee_required: false
+  - rank: 2
+    code: CONFIDENTIAL
+    name: "Confidential"
+    color_hex: "#EA580C"
+    watermark_mode: diagonal
+    two_person_required: true
+    secure_print_required: true
+    cloud_sync_allowed: false
+    e2ee_required: false
+  - rank: 3
+    code: RESTRICTED
+    name: "Restricted (AML/Treasury)"
+    color_hex: "#B91C1C"
+    watermark_mode: dynamic_anti_screenshot
+    two_person_required: true
+    secure_print_required: true
+    cloud_sync_allowed: false
+    e2ee_required: false
+
+default_compartments:
+  - code: KYC_AML
+    name: "KYC & AML Compliance"
+    description: "Customer due diligence packs, PEP screening, and RBZ/FIU filings."
+  - code: CREDIT
+    name: "Credit Risk & Lending"
+    description: "Loan underwriting packs, collateral valuations, and credit committee minutes."
+  - code: TREASURY
+    name: "Treasury & AP"
+    description: "Bank mandates, FX reconciliations, ZIMRA fiscalization, and vendor payables."
+  - code: HR
+    name: "Human Resources"
+    description: "Payroll contracts, appraisals, and restricted staff investigations."
+
+features:
+  correspondence_registry: false
+  ap_automation: true
+  zimra_e_invoicing: true
+  contracts_lifecycle: true
+  hr_vault: true
+  cloud_sync: true
+  cloud_ai: false
+  two_person_strict: false
+  secure_print_default: true

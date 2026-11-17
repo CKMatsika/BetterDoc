@@ -1,0 +1,256 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: infra/frankenphp/Dockerfile
+    restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      APP_KEY: ${APP_KEY:?APP_KEY is required}
+      APP_URL: ${APP_URL:-https://sentinel.lan}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-sentinel}
+      DB_USERNAME: sentinel_app
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      DB_ADMIN_USERNAME: ${DB_ADMIN_USERNAME:-postgres}
+      DB_ADMIN_PASSWORD: ${DB_ADMIN_PASSWORD:?DB_ADMIN_PASSWORD is required}
+      REDIS_HOST: valkey
+      REDIS_PASSWORD: ${VALKEY_PASSWORD:?VALKEY_PASSWORD is required}
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      SESSION_DRIVER: redis
+      BROADCAST_CONNECTION: reverb
+      MEILISEARCH_HOST: http://meilisearch:7700
+      MEILISEARCH_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY is required}
+      SENTINEL_AIR_GAPPED: ${SENTINEL_AIR_GAPPED:-true}
+      SENTINEL_HOSTING_MODE: ${SENTINEL_HOSTING_MODE:-air_gapped_on_prem}
+    ports:
+      - "${APP_PORT:-8080}:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    networks:
+      - sentinel_lan
+      - sentinel_internal
+
+  horizon:
+    build:
+      context: .
+      dockerfile: infra/frankenphp/Dockerfile
+    command: ["php", "artisan", "horizon"]
+    restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      APP_KEY: ${APP_KEY:?APP_KEY is required}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-sentinel}
+      DB_USERNAME: sentinel_app
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      REDIS_HOST: valkey
+      REDIS_PASSWORD: ${VALKEY_PASSWORD:?VALKEY_PASSWORD is required}
+      QUEUE_CONNECTION: redis
+      SENTINEL_AIR_GAPPED: ${SENTINEL_AIR_GAPPED:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    networks:
+      - sentinel_internal
+
+  reverb:
+    build:
+      context: .
+      dockerfile: infra/frankenphp/Dockerfile
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8081"]
+    restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      APP_KEY: ${APP_KEY:?APP_KEY is required}
+      REDIS_HOST: valkey
+      REDIS_PASSWORD: ${VALKEY_PASSWORD:?VALKEY_PASSWORD is required}
+      REVERB_APP_ID: ${REVERB_APP_ID:-sentinel}
+      REVERB_APP_KEY: ${REVERB_APP_KEY:?REVERB_APP_KEY is required}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET:?REVERB_APP_SECRET is required}
+    ports:
+      - "${REVERB_PORT:-8081}:8081"
+    depends_on:
+      valkey:
+        condition: service_healthy
+    networks:
+      - sentinel_lan
+      - sentinel_internal
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-sentinel}
+      POSTGRES_USER: ${DB_ADMIN_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD:?DB_ADMIN_PASSWORD is required}
+    command:
+      - postgres
+      - -c
+      - synchronous_commit=on
+      - -c
+      - full_page_writes=on
+      - -c
+      - wal_level=replica
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./infra/postgres/init-roles.sql:/docker-entrypoint-initdb.d/01-init-roles.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_ADMIN_USERNAME:-postgres} -d ${DB_DATABASE:-sentinel}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinel_internal
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    restart: unless-stopped
+    command: ["valkey-server", "--appendonly", "yes", "--requirepass", "${VALKEY_PASSWORD:?VALKEY_PASSWORD is required}"]
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-a", "${VALKEY_PASSWORD:?VALKEY_PASSWORD is required}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinel_internal
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY is required}
+      MEILI_NO_ANALYTICS: "true"
+      MEILI_ENV: production
+    volumes:
+      - meili_data:/meili_data
+    networks:
+      - sentinel_internal
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+    volumes:
+      - minio_data:/data
+    networks:
+      - sentinel_internal
+
+  clamav:
+    image: clamav/clamav:stable
+    restart: unless-stopped
+    volumes:
+      - clamav_db:/var/lib/clamav
+    networks:
+      - sentinel_internal
+
+  sentinel-ocr:
+    build:
+      context: ./services/sentinel-ocr
+    restart: unless-stopped
+    mem_limit: 1536m
+    pids_limit: 128
+    networks:
+      - sentinel_internal
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    restart: unless-stopped
+    command:
+      - gotenberg
+      - --chromium-disable-javascript=true
+      - --api-timeout=60s
+    mem_limit: 1024m
+    pids_limit: 128
+    networks:
+      - sentinel_internal
+
+  sentinel-pki:
+    build:
+      context: ./services/sentinel-pki
+    restart: unless-stopped
+    mem_limit: 256m
+    pids_limit: 64
+    volumes:
+      - pki_data:/var/lib/sentinel-pki
+    networks:
+      - sentinel_internal
+
+  sentinel-signer:
+    build:
+      context: ./services/sentinel-signer
+    restart: unless-stopped
+    mem_limit: 512m
+    pids_limit: 128
+    depends_on:
+      - sentinel-pki
+    networks:
+      - sentinel_internal
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    restart: unless-stopped
+    volumes:
+      - ./infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prom_data:/prometheus
+    networks:
+      - sentinel_internal
+
+  loki:
+    image: grafana/loki:3.3.2
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    volumes:
+      - ./infra/monitoring/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    networks:
+      - sentinel_internal
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - sentinel_lan
+      - sentinel_internal
+
+networks:
+  sentinel_lan:
+    driver: bridge
+  sentinel_internal:
+    driver: bridge
+    internal: true
+
+volumes:
+  pg_data:
+  valkey_data:
+  meili_data:
+  minio_data:
+  clamav_db:
+  pki_data:
+  prom_data:
+  loki_data:
+  grafana_data:

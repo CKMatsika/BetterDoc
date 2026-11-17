@@ -1,0 +1,22 @@
+{
+    auto_https off
+    frankenphp {
+        worker /app/public/index.php
+    }
+}
+
+:80 {
+    root * /app/public
+    encode zstd br gzip
+
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "no-referrer"
+        Permissions-Policy "camera=(self), microphone=(), geolocation=()"
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' ws: wss:; frame-ancestors 'self'; base-uri 'self'; form-action 'self';"
+        -Server
+    }
+
+    php_server
+}

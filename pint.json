@@ -1,0 +1,7 @@
+{
+    "preset": "laravel",
+    "rules": {
+        "strict_comparison": false,
+        "declare_strict_types": true
+    }
+}

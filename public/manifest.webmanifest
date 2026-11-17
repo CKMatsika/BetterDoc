@@ -1,0 +1,17 @@
+{
+  "name": "SENTINEL DMS",
+  "short_name": "SENTINEL",
+  "description": "Offline-First Classified Document Management & Workflow Platform",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#0F172A",
+  "icons": [
+    {
+      "src": "/sentinel-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

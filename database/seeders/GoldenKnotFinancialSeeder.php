@@ -129,6 +129,7 @@ class GoldenKnotFinancialSeeder extends Seeder
             return $user;
         };
 
+        $sysAdmin = $createUser('sysadmin@golden-knot.co.zw', 'I. Ncube', 'GK-0005', 'IT Security Lead', $hq, 2, SentinelRole::SystemAdmin, ['KYC_AML', 'CREDIT', 'TREASURY', 'HR']);
         $cro = $createUser('cro.gumbo@golden-knot.co.zw', 'N. Gumbo', 'GK-0010', 'Chief Risk Officer', $hq, 3, SentinelRole::Approver, ['KYC_AML', 'CREDIT', 'TREASURY', 'HR']);
         $branchMgr = $createUser('mgr.mutasa@golden-knot.co.zw', 'S. Mutasa', 'GK-0104', 'Branch Manager', $branch, 2, SentinelRole::RecordsOfficer, ['KYC_AML', 'CREDIT']);
         $analyst = $createUser('analyst.chigumba@golden-knot.co.zw', 'T. Chigumba', 'GK-0412', 'Credit Analyst', $branch, 1, SentinelRole::Author, []);
@@ -192,6 +193,8 @@ class GoldenKnotFinancialSeeder extends Seeder
                     }
                     $doc->compartments()->sync($compIds);
 
+                    SeedPdfHelper::attachInitialPdfIfMissing($tenant, $doc, $docNumber, $title, $summary, $rank, $owner);
+
                     $audit->log(
                         tenantId: $tenant->id,
                         eventType: 'document.seeded',
@@ -211,12 +214,12 @@ class GoldenKnotFinancialSeeder extends Seeder
         });
 
         if (! app()->runningUnitTests()) {
-            $dbContext->runAs($cro, function () use ($tenant, $cro, $branchMgr): void {
+            $dbContext->runAs($sysAdmin, function () use ($tenant, $sysAdmin, $cro, $branchMgr): void {
                 $caService = app(InternalCaService::class);
-                $caService->ensureBootstrapped($tenant, $cro);
-                foreach ([$cro, $branchMgr] as $certHolder) {
+                $caService->ensureBootstrapped($tenant, $sysAdmin);
+                foreach ([$sysAdmin, $cro, $branchMgr] as $certHolder) {
                     if ($certHolder->certificates()->doesntExist()) {
-                        $caService->issueUserCertificate($certHolder, CertificateCustodyMode::HsmManaged, $cro);
+                        $caService->issueUserCertificate($certHolder, CertificateCustodyMode::HsmManaged, $sysAdmin);
                     }
                 }
             });

@@ -8,6 +8,8 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Profile\ProfileManager;
 use Database\Seeders\AfzDefenceSeeder;
+use Database\Seeders\CorporateSeeder;
+use Database\Seeders\GoldenKnotFinancialSeeder;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Laravel\Pennant\Feature;
@@ -85,4 +87,30 @@ it('switches organization profiles via Pennant while honoring air-gap cloud bloc
     expect(Feature::for($tenant)->active('ap_automation'))->toBeTrue()
         ->and(Feature::for($tenant)->active('zimra_e_invoicing'))->toBeTrue()
         ->and(Feature::for($tenant)->active('cloud_sync'))->toBeFalse();
+});
+
+it('seeds corporate portal with password-only login and allows Golden Knot SystemAdmin to switch to corporate profile', function (): void {
+    $this->seed([GoldenKnotFinancialSeeder::class, CorporateSeeder::class]);
+
+    /** @var Tenant $corpTenant */
+    $corpTenant = Tenant::query()->where('slug', 'zimcorp-corporate')->firstOrFail();
+    expect($corpTenant->active_profile_code)->toBe(ProfileCode::Corporate);
+
+    $demoPassword = config()->string('sentinel.demo_password', 'SentinelDemo!2026');
+    $this->post('/login', [
+        'identifier' => 'admin@zimcorp.co.zw',
+        'password' => $demoPassword,
+    ])->assertRedirect('/dashboard');
+
+    /** @var User $gkAdmin */
+    $gkAdmin = User::query()->where('email', 'sysadmin@golden-knot.co.zw')->firstOrFail();
+    $this->signIn($gkAdmin);
+
+    $this->post('/admin/profiles/apply', ['profile_code' => ProfileCode::Corporate->value])
+        ->assertRedirect()
+        ->assertSessionDoesntHaveErrors();
+
+    /** @var Tenant $gkTenant */
+    $gkTenant = Tenant::query()->where('slug', 'golden-knot')->firstOrFail();
+    expect($gkTenant->active_profile_code)->toBe(ProfileCode::Corporate);
 });

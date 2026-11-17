@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AfzDefenceSeeder::class,
             GoldenKnotFinancialSeeder::class,
+            CorporateSeeder::class,
         ]);
     }
 }

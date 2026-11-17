@@ -123,13 +123,21 @@ function demoSwitch(userId: string): void {
                     <div class="mb-4 flex items-center justify-between">
                         <div>
                             <h2 class="text-sm font-bold text-white uppercase tracking-wider">Instant Demo Persona Switcher</h2>
-                            <p class="text-xs text-slate-400">Test Air Force (Defence) &amp; Golden Knot (Financial) MAC clearances immediately.</p>
+                            <p class="text-xs text-slate-400">Switch portals immediately between Air Force (Defence), Golden Knot (Financial) &amp; ZimCorp (Corporate).</p>
                         </div>
                     </div>
 
                     <div class="space-y-5">
                         <div v-for="(users, orgName) in groupedDemo" :key="orgName">
-                            <h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-sky-400">{{ orgName }}</h3>
+                            <div class="mb-2 flex items-center gap-2">
+                                <h3 class="text-xs font-semibold uppercase tracking-wider text-sky-400">{{ orgName }}</h3>
+                                <span
+                                    v-if="users[0]?.profile"
+                                    class="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase text-slate-300"
+                                >
+                                    {{ users[0].profile }}
+                                </span>
+                            </div>
                             <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                 <button
                                     v-for="u in users"

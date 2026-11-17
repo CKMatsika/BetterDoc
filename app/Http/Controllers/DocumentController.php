@@ -17,8 +17,11 @@ use App\Models\ClearanceLevel;
 use App\Models\Compartment;
 use App\Models\Document;
 use App\Models\DocumentAclGrant;
+use App\Models\DocumentAnnotation;
+use App\Models\DocumentComment;
 use App\Models\DocumentVersion;
 use App\Models\Folder;
+use App\Models\RetentionSchedule;
 use App\Models\SavedSmartView;
 use App\Models\SignatureEnvelope;
 use App\Models\SignatureRequest;
@@ -26,6 +29,9 @@ use App\Models\SignatureVerification;
 use App\Models\Tag;
 use App\Models\User;
 use App\Models\UserCertificate;
+use App\Models\WorkflowDefinition;
+use App\Models\WorkflowInstance;
+use App\Models\WorkflowTask;
 use App\Services\Audit\ImmutableAuditLogger;
 use App\Services\Crypto\EnvelopeEncryptionService;
 use App\Services\Dms\DocumentVersioningService;
@@ -253,6 +259,12 @@ class DocumentController extends Controller
             'correspondenceEntry',
             'signatureEnvelopes.requests.signer',
             'signatureEnvelopes.creator',
+            'comments.author',
+            'comments.replies.author',
+            'annotations.creator',
+            'retentionSchedule',
+            'workflowInstances.definition',
+            'workflowInstances.tasks.assignee',
         ]);
 
         $this->audit->log(
@@ -358,6 +370,20 @@ class DocumentController extends Controller
             ->values()
             ->all();
 
+        $workflowDefinitions = WorkflowDefinition::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'key', 'name', 'sla_hours'])
+            ->toArray();
+
+        $retentionSchedules = RetentionSchedule::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get(['id', 'code', 'name', 'retention_days', 'disposition_action'])
+            ->toArray();
+
         return Inertia::render('Documents/Show', [
             'document' => [
                 'id' => $document->id,
@@ -381,7 +407,16 @@ class DocumentController extends Controller
                 'compartments' => $document->compartments->pluck('code')->values()->all(),
                 'tags' => $document->tags->map(static fn (Tag $t): array => ['id' => $t->id, 'name' => $t->name, 'color_hex' => $t->color_hex])->values()->all(),
                 'legal_hold_active' => $document->legal_hold_active,
+                'legal_hold_reason' => $document->legal_hold_reason,
                 'is_worm' => $document->is_worm,
+                'worm_locked_at' => $document->worm_locked_at?->toIso8601String(),
+                'worm_retention_until' => $document->worm_retention_until?->toIso8601String(),
+                'retention_schedule' => $document->retentionSchedule ? [
+                    'id' => $document->retentionSchedule->id,
+                    'code' => $document->retentionSchedule->code,
+                    'name' => $document->retentionSchedule->name,
+                    'expires_at' => $document->retention_expires_at?->toIso8601String(),
+                ] : null,
                 'lock' => $document->lock && $document->lock->isActive() ? [
                     'locked_by_id' => $document->lock->locked_by,
                     'locked_by_name' => $document->lock->holder?->name,
@@ -439,6 +474,46 @@ class DocumentController extends Controller
             'signatureVerification' => $sigVerificationPayload,
             'envelopes' => $envelopesPayload,
             'myCertificates' => $myActiveCerts,
+            'comments' => $document->comments->map(static fn (DocumentComment $c): array => [
+                'id' => $c->id,
+                'body' => $c->body,
+                'author_name' => trim(($c->author?->rank_title ? $c->author->rank_title.' ' : '').($c->author->name ?? 'User')),
+                'resolved_at' => $c->resolved_at?->toIso8601String(),
+                'suppressed_mentions_count' => is_array($c->suppressed_mention_ids_json) ? count($c->suppressed_mention_ids_json) : 0,
+                'created_at' => $c->created_at?->toIso8601String(),
+                'replies' => $c->replies->map(static fn (DocumentComment $r): array => [
+                    'id' => $r->id,
+                    'body' => $r->body,
+                    'author_name' => trim(($r->author?->rank_title ? $r->author->rank_title.' ' : '').($r->author->name ?? 'User')),
+                    'created_at' => $r->created_at?->toIso8601String(),
+                ])->values()->all(),
+            ])->values()->all(),
+            'annotations' => $document->annotations->map(static fn (DocumentAnnotation $a): array => [
+                'id' => $a->id,
+                'version_id' => $a->version_id,
+                'page_number' => $a->page_number,
+                'kind' => $a->kind->value,
+                'coords' => $a->coords_json,
+                'content' => $a->content,
+                'redacted_in_version_id' => $a->redacted_in_version_id,
+                'creator_name' => $a->creator?->name,
+            ])->values()->all(),
+            'workflowInstances' => $document->workflowInstances->map(static fn (WorkflowInstance $wi): array => [
+                'id' => $wi->id,
+                'definition_name' => $wi->definition?->name,
+                'status' => $wi->status->value,
+                'sla_due_at' => $wi->sla_due_at?->toIso8601String(),
+                'tasks' => $wi->tasks->map(static fn (WorkflowTask $wt): array => [
+                    'id' => $wt->id,
+                    'node_label' => $wt->node_label,
+                    'assignee_name' => $wt->assignee?->name,
+                    'status' => $wt->status->value,
+                    'decision' => $wt->decision,
+                    'approval_hash' => $wt->approval_hash,
+                ])->values()->all(),
+            ])->values()->all(),
+            'workflowDefinitions' => $workflowDefinitions,
+            'retentionSchedules' => $retentionSchedules,
             'capabilities' => [
                 'can_edit' => $this->policyEngine->authorize($user, 'update', $document, ['bypass_abac' => true])->allowed,
                 'can_share' => $this->policyEngine->authorize($user, 'share', $document, ['bypass_abac' => true])->allowed,

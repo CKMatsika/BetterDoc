@@ -17,6 +17,12 @@ Route::get('/pki/ca/{tenantId}/root.crt', [PkiController::class, 'downloadRootCa
 Route::get('/pki/ca/{tenantId}/crl.der', [PkiController::class, 'downloadCrl'])->name('pki.crl');
 Route::get('/pki/ocsp/{tenantId}/{serial}', [PkiController::class, 'ocspCheck'])->name('pki.ocsp');
 
+// Collabora Online WOPI Host Endpoints (Token-authenticated server callbacks; MAC + PostgreSQL RLS enforced per token user)
+Route::get('/wopi/files/{documentId}', [WopiController::class, 'checkFileInfo'])->name('wopi.check_file_info');
+Route::post('/wopi/files/{documentId}', [WopiController::class, 'postFile'])->name('wopi.post_file');
+Route::get('/wopi/files/{documentId}/contents', [WopiController::class, 'getFile'])->name('wopi.get_file');
+Route::post('/wopi/files/{documentId}/contents', [WopiController::class, 'putFile'])->name('wopi.put_file');
+
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.attempt');
@@ -97,5 +103,39 @@ Route::middleware('auth')->group(function (): void {
 
         Route::get('/admin/profiles', [AdminProfileController::class, 'index'])->name('admin.profiles');
         Route::post('/admin/profiles/apply', [AdminProfileController::class, 'apply'])->name('admin.profiles.apply');
+
+        // Phase 4: Collaboration, Annotations, Destructive PDF Redaction & Collabora Co-Editing
+        Route::post('/documents/{document}/comments', [CollaborationController::class, 'storeComment'])->name('documents.comments.store');
+        Route::post('/documents/{document}/comments/{comment}/resolve', [CollaborationController::class, 'resolveComment'])->name('documents.comments.resolve');
+        Route::post('/documents/{document}/annotations', [CollaborationController::class, 'storeAnnotation'])->name('documents.annotations.store');
+        Route::delete('/documents/{document}/annotations/{annotation}', [CollaborationController::class, 'destroyAnnotation'])->name('documents.annotations.destroy');
+        Route::post('/documents/{document}/redactions/apply', [CollaborationController::class, 'applyRedactions'])->name('documents.redactions.apply');
+        Route::get('/documents/{document}/edit-office', [CollaborationController::class, 'editOffice'])->name('documents.edit_office');
+        Route::get('/notifications', [CollaborationController::class, 'notifications'])->name('notifications.index');
+        Route::post('/notifications/{notification}/read', [CollaborationController::class, 'markNotificationRead'])->name('notifications.read');
+        Route::post('/notifications/read-all', [CollaborationController::class, 'markAllNotificationsRead'])->name('notifications.read_all');
+
+        // Phase 4: Visual BPMN-Lite Workflows & Task Inbox
+        Route::get('/workflows', [WorkflowController::class, 'index'])->name('workflows.index');
+        Route::post('/workflows/definitions', [WorkflowController::class, 'storeDefinition'])->name('workflows.definitions.store');
+        Route::post('/documents/{document}/workflows/start', [WorkflowController::class, 'startInstance'])->name('workflows.start');
+        Route::get('/workflows/inbox', [WorkflowController::class, 'inbox'])->name('workflows.inbox');
+        Route::post('/workflows/tasks/{workflowTask}/decide', [WorkflowController::class, 'decideTask'])->name('workflows.tasks.decide');
+        Route::post('/workflows/tasks/{workflowTask}/delegate', [WorkflowController::class, 'delegateTask'])->name('workflows.tasks.delegate');
+        Route::post('/workflows/escalate-slas', [WorkflowController::class, 'runEscalations'])->name('workflows.escalate');
+
+        // Phase 4: Document Templates & Mail-Merge
+        Route::get('/templates', [TemplateController::class, 'index'])->name('templates.index');
+        Route::post('/templates', [TemplateController::class, 'store'])->name('templates.store');
+        Route::post('/templates/{documentTemplate}/generate', [TemplateController::class, 'generate'])->name('templates.generate');
+
+        // Phase 4: Records Governance, Legal Hold, WORM & User Clearance Revocation
+        Route::get('/governance', [GovernanceController::class, 'index'])->name('governance.index');
+        Route::post('/governance/schedules', [GovernanceController::class, 'storeSchedule'])->name('governance.schedules.store');
+        Route::post('/documents/{document}/governance/retention', [GovernanceController::class, 'assignRetention'])->name('documents.governance.retention');
+        Route::post('/documents/{document}/governance/legal-hold', [GovernanceController::class, 'toggleLegalHold'])->name('documents.governance.legal_hold');
+        Route::post('/documents/{document}/governance/worm-lock', [GovernanceController::class, 'lockWorm'])->name('documents.governance.worm_lock');
+        Route::post('/documents/{document}/governance/disposition', [GovernanceController::class, 'initiateDisposition'])->name('documents.governance.disposition');
+        Route::post('/admin/users/{targetUser}/clearance', [GovernanceController::class, 'updateUserClearance'])->name('admin.users.clearance');
     });
 });

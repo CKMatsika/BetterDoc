@@ -207,6 +207,8 @@ class CorporateSeeder extends Seeder
             $seedDoc('ZC/FIN/2026/042', 'Q4 Vendor Payable Batch — Harare Logistics Ltd', 'Matched 3-way invoice batch and ZIMRA tax clearance verification.', $cabCommercial, $folderVendors, $fin, $opsLead, 1, ['FINANCE']);
             $seedDoc('ZC/CON/2026/108', 'Annual Commercial Fleet Maintenance Agreement', 'Signed service-level schedule for regional delivery fleet maintenance.', $cabCommercial, $folderVendors, $ops, $opsLead, 1, []);
             $seedDoc('ZC/EXEC/2026/009', 'Board Acquisition & Capex Allocation Memorandum Q4', 'Confidential executive capex review and warehouse expansion budget.', $cabExec, $folderBoard, $hq, $director, 2, ['EXEC']);
+
+            SeedPhase4DefaultsHelper::seedDefaults($tenant, $director);
         });
 
         if (! app()->runningUnitTests()) {

@@ -74,8 +74,7 @@ class SeedPdfHelper
         $enc = app(EnvelopeEncryptionService::class)->encryptFileToDisk($tmpPdf, 'sentinel_vault', $storageKey);
         @unlink($tmpPdf);
 
-        $version = DocumentVersion::query()->create([
-            'id' => $verId,
+        $version = new DocumentVersion([
             'tenant_id' => $tenant->id,
             'document_id' => $doc->id,
             'version_major' => 1,
@@ -98,6 +97,8 @@ class SeedPdfHelper
             'version_note' => 'Initial seeded official PDF/A record',
             'created_by' => $owner->id,
         ]);
+        $version->id = $verId;
+        $version->save();
 
         $doc->update([
             'current_version_id' => $version->id,

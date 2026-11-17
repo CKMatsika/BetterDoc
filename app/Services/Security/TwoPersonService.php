@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\Security;
 
+use App\Enums\DispositionAction;
+use App\Enums\DocumentStatus;
 use App\Enums\TwoPersonActionType;
 use App\Enums\TwoPersonStatus;
 use App\Exceptions\TwoPersonViolationException;
 use App\Models\ClearanceLevel;
+use App\Models\Compartment;
+use App\Models\DispositionReview;
 use App\Models\Document;
 use App\Models\TwoPersonRequest;
 use App\Models\User;
@@ -243,6 +247,61 @@ class TwoPersonService
                 classificationRank: $targetLevel->rank,
                 before: $before,
                 after: ['clearance_rank' => $targetLevel->rank],
+                request: $request,
+            );
+        } elseif ($tpRequest->action_type === TwoPersonActionType::GrantCompartment) {
+            $targetUser = User::query()->where('tenant_id', $tpRequest->tenant_id)->where('id', $tpRequest->target_id)->firstOrFail();
+            $compartmentId = is_string($payload['compartment_id'] ?? null) ? $payload['compartment_id'] : '';
+            $compartment = Compartment::query()
+                ->where('tenant_id', $tpRequest->tenant_id)
+                ->where('id', $compartmentId)
+                ->firstOrFail();
+
+            $targetUser->compartments()->syncWithoutDetaching([
+                $compartment->id => [
+                    'granted_by' => $approver->id,
+                    'granted_at' => now(),
+                ],
+            ]);
+
+            $this->audit->log(
+                tenantId: $targetUser->tenant_id,
+                eventType: 'user.compartment_granted',
+                resourceType: 'user',
+                resourceId: $targetUser->id,
+                actor: $approver,
+                classificationRank: $targetUser->clearance_rank,
+                after: ['compartment_code' => $compartment->code],
+                request: $request,
+            );
+        } elseif ($tpRequest->action_type === TwoPersonActionType::DisposeRecord) {
+            $doc = Document::query()->where('id', $tpRequest->target_id)->firstOrFail();
+            if ($doc->legal_hold_active || ($doc->is_worm && $doc->worm_retention_until !== null && $doc->worm_retention_until->isFuture())) {
+                throw new TwoPersonViolationException('Cannot execute disposition under Legal Hold or active WORM retention.');
+            }
+
+            $actionRaw = is_string($payload['disposition_action'] ?? null) ? $payload['disposition_action'] : DispositionAction::Archive->value;
+            $action = DispositionAction::tryFrom($actionRaw) ?? DispositionAction::Archive;
+
+            if ($action === DispositionAction::Destroy) {
+                $doc->update(['status' => DocumentStatus::Disposed]);
+                $doc->delete();
+            } else {
+                $doc->update(['status' => DocumentStatus::Archived]);
+            }
+
+            DispositionReview::query()
+                ->where('two_person_request_id', $tpRequest->id)
+                ->update(['status' => 'executed', 'decided_at' => now()]);
+
+            $this->audit->log(
+                tenantId: $doc->tenant_id,
+                eventType: 'governance.disposition_executed',
+                resourceType: 'document',
+                resourceId: $doc->id,
+                actor: $approver,
+                classificationRank: $doc->classification_rank,
+                after: ['disposition_action' => $action->value, 'doc_number' => $doc->doc_number],
                 request: $request,
             );
         }

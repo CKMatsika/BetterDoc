@@ -26,6 +26,9 @@ services:
       MEILISEARCH_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY is required}
       SENTINEL_AIR_GAPPED: ${SENTINEL_AIR_GAPPED:-true}
       SENTINEL_HOSTING_MODE: ${SENTINEL_HOSTING_MODE:-air_gapped_on_prem}
+      SENTINEL_COLLABORA_ENABLED: ${SENTINEL_COLLABORA_ENABLED:-true}
+      SENTINEL_COLLABORA_URL: http://collabora:9980
+      SENTINEL_WOPI_BASE_URL: http://app:80
     ports:
       - "${APP_PORT:-8080}:80"
     depends_on:
@@ -200,6 +203,21 @@ services:
     depends_on:
       - sentinel-pki
     networks:
+      - sentinel_internal
+
+  collabora:
+    image: collabora/code:24.04.10.2.1
+    restart: unless-stopped
+    environment:
+      aliasgroup1: http://app:80,https://sentinel.lan
+      extra_params: "--o:ssl.enable=false --o:ssl.termination=true --o:user_interface.mode=notebookbar --o:home_mode.enable=false"
+      dont_gen_ssl_cert: "true"
+    cap_add:
+      - MKNOD
+    mem_limit: 2048m
+    pids_limit: 256
+    networks:
+      - sentinel_lan
       - sentinel_internal
 
   prometheus:

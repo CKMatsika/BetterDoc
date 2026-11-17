@@ -18,7 +18,14 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        ['middleware' => ['web', 'auth', 'mfa.enforced']],
+    )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->validateCsrfTokens(except: [
+            'wopi/*',
+        ]);
         $middleware->append(SecurityHeadersMiddleware::class);
 
         $middleware->prependToPriorityList(

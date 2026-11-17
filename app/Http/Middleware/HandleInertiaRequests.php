@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Enums\TwoPersonStatus;
+use App\Enums\WorkflowTaskStatus;
 use App\Models\TwoPersonRequest;
 use App\Models\User;
+use App\Models\UserNotification;
 use App\Models\UserSession;
+use App\Models\WorkflowTask;
 use App\Services\Profile\ProfileManager;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -36,6 +39,9 @@ class HandleInertiaRequests extends Middleware
         $authPayload = null;
         $tenantPayload = null;
         $pendingApprovals = 0;
+        $pendingWorkflowTasks = 0;
+        $unreadNotifications = [];
+        $unreadNotificationsCount = 0;
 
         if ($user !== null) {
             $user->loadMissing(['tenant', 'orgUnit', 'clearanceLevel', 'compartments']);
@@ -102,6 +108,40 @@ class HandleInertiaRequests extends Middleware
                     ->where('requested_by', '!=', $user->id)
                     ->where('target_classification_rank', '<=', $user->clearance_rank)
                     ->count();
+
+                $pendingWorkflowTasks = WorkflowTask::query()
+                    ->where('tenant_id', $user->tenant_id)
+                    ->whereIn('status', [WorkflowTaskStatus::Pending->value, WorkflowTaskStatus::Escalated->value])
+                    ->where(function ($q) use ($user): void {
+                        $q->where('assignee_id', $user->id)
+                            ->orWhere('delegated_to_id', $user->id);
+                    })
+                    ->count();
+
+                $unreadNotificationsCount = UserNotification::query()
+                    ->where('tenant_id', $user->tenant_id)
+                    ->where('user_id', $user->id)
+                    ->whereNull('read_at')
+                    ->count();
+
+                $unreadNotifications = UserNotification::query()
+                    ->where('tenant_id', $user->tenant_id)
+                    ->where('user_id', $user->id)
+                    ->latest()
+                    ->limit(8)
+                    ->get()
+                    ->map(static fn (UserNotification $n): array => [
+                        'id' => $n->id,
+                        'type' => $n->type,
+                        'title' => $n->title,
+                        'body' => $n->body,
+                        'document_id' => $n->document_id,
+                        'action_url' => $n->action_url,
+                        'read_at' => $n->read_at?->toIso8601String(),
+                        'created_at' => $n->created_at?->toIso8601String(),
+                    ])
+                    ->values()
+                    ->all();
             }
         }
 
@@ -111,10 +151,20 @@ class HandleInertiaRequests extends Middleware
                 'name' => config('app.name', 'SENTINEL DMS'),
                 'air_gapped' => (bool) config('sentinel.air_gapped', true),
                 'demo_switcher_enabled' => (bool) config('sentinel.demo_switcher_enabled', false),
+                'reverb' => [
+                    'enabled' => config('broadcasting.default') === 'reverb',
+                    'key' => config()->string('broadcasting.connections.reverb.key', 'sentinel-lan-key'),
+                    'host' => config()->string('broadcasting.connections.reverb.options.host', '127.0.0.1'),
+                    'port' => config()->integer('broadcasting.connections.reverb.options.port', 8081),
+                    'scheme' => config()->string('broadcasting.connections.reverb.options.scheme', 'http'),
+                ],
             ],
             'auth' => $authPayload,
             'tenant' => $tenantPayload,
             'pendingApprovalsCount' => $pendingApprovals,
+            'pendingWorkflowTasksCount' => $pendingWorkflowTasks,
+            'unreadNotificationsCount' => $unreadNotificationsCount,
+            'unreadNotifications' => $unreadNotifications,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

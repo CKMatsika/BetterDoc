@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
@@ -23,6 +24,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $classification_level_id
  * @property int $classification_rank
  * @property string|null $current_version_id
+ * @property string|null $retention_schedule_id
+ * @property Carbon|null $retention_expires_at
  * @property string $doc_number
  * @property string $title
  * @property string|null $summary
@@ -30,7 +33,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property DocumentStatus $status
  * @property bool $unit_wide_readable
  * @property bool $legal_hold_active
+ * @property string|null $legal_hold_reason
  * @property bool $is_worm
+ * @property Carbon|null $worm_locked_at
+ * @property Carbon|null $worm_retention_until
  * @property bool $client_e2ee
  * @property string|null $hr_subject_user_id
  * @property bool $hr_restricted_from_subject
@@ -51,6 +57,8 @@ class Document extends Model
         'classification_level_id',
         'classification_rank',
         'current_version_id',
+        'retention_schedule_id',
+        'retention_expires_at',
         'doc_number',
         'title',
         'summary',
@@ -58,7 +66,10 @@ class Document extends Model
         'status',
         'unit_wide_readable',
         'legal_hold_active',
+        'legal_hold_reason',
         'is_worm',
+        'worm_locked_at',
+        'worm_retention_until',
         'client_e2ee',
         'hr_subject_user_id',
         'hr_restricted_from_subject',
@@ -79,6 +90,9 @@ class Document extends Model
             'client_e2ee' => 'boolean',
             'hr_restricted_from_subject' => 'boolean',
             'metadata_json' => 'array',
+            'retention_expires_at' => 'datetime',
+            'worm_locked_at' => 'datetime',
+            'worm_retention_until' => 'datetime',
         ];
     }
 
@@ -194,5 +208,45 @@ class Document extends Model
     public function signatureEnvelopes(): HasMany
     {
         return $this->hasMany(SignatureEnvelope::class)->latest();
+    }
+
+    /**
+     * @return HasMany<DocumentComment, $this>
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(DocumentComment::class)->whereNull('parent_id')->latest();
+    }
+
+    /**
+     * @return HasMany<DocumentAnnotation, $this>
+     */
+    public function annotations(): HasMany
+    {
+        return $this->hasMany(DocumentAnnotation::class)->orderBy('page_number')->orderBy('created_at');
+    }
+
+    /**
+     * @return HasMany<WorkflowInstance, $this>
+     */
+    public function workflowInstances(): HasMany
+    {
+        return $this->hasMany(WorkflowInstance::class)->latest();
+    }
+
+    /**
+     * @return BelongsTo<RetentionSchedule, $this>
+     */
+    public function retentionSchedule(): BelongsTo
+    {
+        return $this->belongsTo(RetentionSchedule::class);
+    }
+
+    /**
+     * @return HasMany<DispositionReview, $this>
+     */
+    public function dispositionReviews(): HasMany
+    {
+        return $this->hasMany(DispositionReview::class)->latest();
     }
 }

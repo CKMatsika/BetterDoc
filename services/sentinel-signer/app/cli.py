@@ -7,7 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-from app import pki_engine, signing_engine
+from app import pki_engine, redaction_engine, signing_engine
 
 
 def main() -> int:
@@ -176,6 +176,30 @@ def main() -> int:
             data_bytes=base64.b64decode(payload["data_b64"]),
         )
         print(json.dumps({"signature_b64": base64.b64encode(sig).decode("ascii")}))
+        return 0
+
+    if action == "redact_pdf":
+        pdf_bytes = Path(payload["input_pdf_path"]).read_bytes()
+        res = redaction_engine.redact_pdf(
+            pdf_bytes=pdf_bytes,
+            boxes=payload.get("boxes", []),
+            scrub_metadata=bool(payload.get("scrub_metadata", True)),
+        )
+        redacted_bytes = res.pop("redacted_pdf_bytes")
+        Path(payload["output_pdf_path"]).write_bytes(redacted_bytes)
+        print(json.dumps(res))
+        return 0
+
+    if action == "render_html_pdf":
+        res = redaction_engine.render_html_to_pdf(
+            html_body=payload["html_body"],
+            title=payload["title"],
+            classification_banner=payload.get("classification_banner", ""),
+            doc_number=payload.get("doc_number", ""),
+        )
+        pdf_bytes = res.pop("pdf_bytes")
+        Path(payload["output_pdf_path"]).write_bytes(pdf_bytes)
+        print(json.dumps(res))
         return 0
 
     sys.stderr.write(f"Unknown action: {action}\n")

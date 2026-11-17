@@ -103,6 +103,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Offline Office Co-Editing (Collabora Online / WOPI) & Workflows
+    |--------------------------------------------------------------------------
+    */
+    'collabora' => [
+        'enabled' => (bool) env('SENTINEL_COLLABORA_ENABLED', false),
+        'url' => env('SENTINEL_COLLABORA_URL', 'http://collabora:9980'),
+        'wopi_base_url' => env('SENTINEL_WOPI_BASE_URL', env('APP_URL', 'http://127.0.0.1:8000')),
+        'token_ttl_minutes' => (int) env('SENTINEL_WOPI_TOKEN_TTL_MINUTES', 120),
+        'bind_client_ip' => (bool) env('SENTINEL_WOPI_BIND_IP', false),
+    ],
+
+    'workflows' => [
+        'default_sla_hours' => (int) env('SENTINEL_WORKFLOW_SLA_HOURS', 48),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Optional LDAP / Active Directory / FreeIPA Connector
     |--------------------------------------------------------------------------
     */

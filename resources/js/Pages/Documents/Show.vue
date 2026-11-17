@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ArrowLeft, AlertTriangle, Download, GitCompare, Lock, RotateCcw, Share2, Shield, Trash2, Unlock } from '@lucide/vue';
+import { ArrowLeft, AlertTriangle, Archive, Download, FileEdit, GitCompare, GitFork, Lock, RotateCcw, Share2, Shield, ShieldCheck, Trash2, Unlock } from '@lucide/vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ClassificationBadge from '@/Components/ClassificationBadge.vue';
+import DocumentCollaborationPanel from '@/Components/DocumentCollaborationPanel.vue';
 import PdfWatermarkViewer from '@/Components/PdfWatermarkViewer.vue';
 import ResumableUploader from '@/Components/ResumableUploader.vue';
 import SigningPanel, { type EnvelopeItem, type SignatureVerificationPayload } from '@/Components/SigningPanel.vue';
+import type { DocumentAnnotationItem, DocumentCommentItem } from '@/types/sentinel';
 
 interface VersionRow {
     id: string;
@@ -50,7 +52,11 @@ const props = defineProps<{
         compartments: string[];
         tags: { id: string; name: string; color_hex: string }[];
         legal_hold_active: boolean;
+        legal_hold_reason?: string | null;
         is_worm: boolean;
+        worm_locked_at?: string | null;
+        worm_retention_until?: string | null;
+        retention_schedule?: { id: string; code: string; name: string; expires_at: string | null } | null;
         lock: {
             locked_by_id: string;
             locked_by_name: string | null;
@@ -88,6 +94,17 @@ const props = defineProps<{
     clearanceLevels: { id: string; rank: number; code: string; name: string; color_hex: string }[];
     signatureVerification: SignatureVerificationPayload;
     envelopes: EnvelopeItem[];
+    comments: DocumentCommentItem[];
+    annotations: DocumentAnnotationItem[];
+    workflowInstances: {
+        id: string;
+        definition_name: string | null;
+        status: string;
+        sla_due_at: string | null;
+        tasks: { id: string; node_label: string; assignee_name: string | null; status: string; decision: string | null; approval_hash: string | null }[];
+    }[];
+    workflowDefinitions: { id: string; key: string; name: string; sla_hours: number }[];
+    retentionSchedules: { id: string; code: string; name: string; retention_days: number; disposition_action: string }[];
     capabilities: {
         can_edit: boolean;
         can_share: boolean;
@@ -122,6 +139,68 @@ const reclassifyForm = useForm({
 });
 
 const tagForm = useForm({ name: '' });
+
+const workflowStartForm = useForm({
+    definition_id: props.workflowDefinitions[0]?.id ?? '',
+});
+
+const retentionForm = useForm({
+    retention_schedule_id: props.document.retention_schedule?.id ?? props.retentionSchedules[0]?.id ?? '',
+});
+
+const legalHoldForm = useForm({
+    active: !props.document.legal_hold_active,
+    reason: '',
+});
+
+function submitCreateAnnotation(payload: {
+    version_id: string | null;
+    page_number: number;
+    kind: 'note' | 'highlight' | 'redaction_mark';
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    content: string | null;
+}): void {
+    router.post(`/documents/${props.document.id}/annotations`, payload, { preserveScroll: true });
+}
+
+function submitStartWorkflow(): void {
+    if (!workflowStartForm.definition_id) {
+        return;
+    }
+    workflowStartForm.post(`/documents/${props.document.id}/workflows/start`, { preserveScroll: true });
+}
+
+function submitAssignRetention(): void {
+    if (!retentionForm.retention_schedule_id) {
+        return;
+    }
+    retentionForm.post(`/documents/${props.document.id}/governance/retention`, { preserveScroll: true });
+}
+
+function submitLegalHold(): void {
+    legalHoldForm.post(`/documents/${props.document.id}/governance/legal-hold`, {
+        preserveScroll: true,
+        onSuccess: () => legalHoldForm.reset('reason'),
+    });
+}
+
+function submitWormLock(): void {
+    router.post(`/documents/${props.document.id}/governance/worm-lock`, {}, { preserveScroll: true });
+}
+
+function submitDisposition(): void {
+    router.post(
+        `/documents/${props.document.id}/governance/disposition`,
+        {
+            action: 'archive',
+            notes: 'Retention schedule milestone review initiated for dual control.',
+        },
+        { preserveScroll: true }
+    );
+}
 
 function submitShare(): void {
     shareForm.post(`/documents/${props.document.id}/share`, { preserveScroll: true });
@@ -224,6 +303,13 @@ function requestDelete(): void {
                     >
                         <Download class="h-3.5 w-3.5" /> Download {{ activeVersion.label }}
                     </a>
+                    <Link
+                        v-if="activeVersion"
+                        :href="`/documents/${document.id}/edit-office`"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-900 hover:bg-indigo-100"
+                    >
+                        <FileEdit class="h-3.5 w-3.5" /> Co-Edit Offline (WOPI)
+                    </Link>
                     <button
                         v-if="capabilities.can_delete"
                         type="button"
@@ -242,12 +328,28 @@ function requestDelete(): void {
 
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 <div class="space-y-6 lg:col-span-2">
-                    <!-- Self-Hosted PDF.js Viewer with Forensic Watermark -->
+                    <!-- Self-Hosted PDF.js Viewer with Annotations, Redaction & Forensic Watermark -->
                     <PdfWatermarkViewer
                         v-if="activeVersion"
                         :stream-url="`/documents/${document.id}/versions/${activeVersion.id}/stream`"
                         :mime-type="activeVersion.mime_type"
                         :watermark="watermarkOverlay"
+                        :annotations="annotations"
+                        :version-id="activeVersion.id"
+                        :can-annotate="capabilities.can_edit"
+                        :is-worm="document.is_worm"
+                        @create-annotation="submitCreateAnnotation"
+                    />
+
+                    <!-- Comments, Clearance-Safe @Mentions & Destructive Redaction Controls -->
+                    <DocumentCollaborationPanel
+                        :document-id="document.id"
+                        :current-version-id="document.current_version_id"
+                        :comments="comments"
+                        :annotations="annotations"
+                        :shareable-users="shareableUsers"
+                        :can-edit="capabilities.can_edit"
+                        :is-worm="document.is_worm"
                     />
 
                     <!-- Cryptographic Verification Banner & Multi-Party PAdES Envelopes -->
@@ -371,6 +473,89 @@ function requestDelete(): void {
                                 Grant Access
                             </button>
                         </form>
+                    </div>
+
+                    <!-- Workflows Routing -->
+                    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-3 text-xs">
+                        <div class="flex items-center gap-2 text-sm font-bold text-slate-900">
+                            <GitFork class="h-4 w-4 text-sky-600" />
+                            <span>Workflow Routing</span>
+                        </div>
+                        <form v-if="workflowDefinitions.length > 0" @submit.prevent="submitStartWorkflow" class="flex gap-2">
+                            <select v-model="workflowStartForm.definition_id" class="flex-1 rounded border border-slate-300 px-2 py-1.5">
+                                <option v-for="wf in workflowDefinitions" :key="wf.id" :value="wf.id">{{ wf.name }}</option>
+                            </select>
+                            <button type="submit" :disabled="workflowStartForm.processing" class="rounded bg-slate-900 px-3 py-1.5 font-semibold text-white hover:bg-slate-800">
+                                Start
+                            </button>
+                        </form>
+                        <div v-if="workflowInstances.length > 0" class="space-y-2">
+                            <div v-for="wi in workflowInstances" :key="wi.id" class="rounded border border-slate-200 bg-slate-50 p-2">
+                                <div class="flex items-center justify-between font-semibold">
+                                    <span>{{ wi.definition_name }}</span>
+                                    <span class="font-mono text-[10px] uppercase">{{ wi.status }}</span>
+                                </div>
+                                <div v-for="wt in wi.tasks" :key="wt.id" class="mt-1 font-mono text-[10px] text-slate-600">
+                                    · {{ wt.node_label }} ({{ wt.assignee_name }}) — {{ wt.status }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Records Governance (Retention, Legal Hold & WORM) -->
+                    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-3 text-xs">
+                        <div class="flex items-center gap-2 text-sm font-bold text-slate-900">
+                            <Archive class="h-4 w-4 text-emerald-700" />
+                            <span>Records Governance</span>
+                        </div>
+                        <div class="space-y-1 text-slate-600">
+                            <div>Retention: <span class="font-semibold text-slate-900">{{ document.retention_schedule?.code ?? 'Not assigned' }}</span></div>
+                            <div>
+                                Legal Hold:
+                                <span class="font-semibold" :class="document.legal_hold_active ? 'text-amber-700' : 'text-slate-800'">
+                                    {{ document.legal_hold_active ? `ACTIVE (${document.legal_hold_reason ?? 'Hold'})` : 'Inactive' }}
+                                </span>
+                            </div>
+                            <div>
+                                WORM Lock:
+                                <span class="font-semibold" :class="document.is_worm ? 'text-slate-950' : 'text-slate-600'">
+                                    {{ document.is_worm ? 'SEALED (Immutable Write-Once)' : 'Unlocked' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <form v-if="capabilities.can_edit && retentionSchedules.length > 0" @submit.prevent="submitAssignRetention" class="flex gap-2">
+                            <select v-model="retentionForm.retention_schedule_id" class="flex-1 rounded border border-slate-300 px-2 py-1">
+                                <option v-for="rs in retentionSchedules" :key="rs.id" :value="rs.id">{{ rs.code }} ({{ rs.retention_days }}d)</option>
+                            </select>
+                            <button type="submit" class="rounded border border-slate-300 px-2.5 py-1 font-semibold hover:bg-slate-50">Apply</button>
+                        </form>
+
+                        <form @submit.prevent="submitLegalHold" class="flex gap-2">
+                            <input v-model="legalHoldForm.reason" type="text" required placeholder="Legal hold justification..." class="flex-1 rounded border border-slate-300 px-2 py-1" />
+                            <button type="submit" class="rounded bg-amber-600 px-2.5 py-1 font-semibold text-white hover:bg-amber-500">
+                                {{ document.legal_hold_active ? 'Release' : 'Hold' }}
+                            </button>
+                        </form>
+
+                        <div class="flex flex-wrap gap-2">
+                            <button
+                                v-if="!document.is_worm && capabilities.can_edit"
+                                type="button"
+                                @click="submitWormLock"
+                                class="inline-flex items-center gap-1 rounded bg-slate-900 px-2.5 py-1 font-semibold text-white hover:bg-slate-800"
+                            >
+                                <Lock class="h-3 w-3" /> Lock WORM
+                            </button>
+                            <button
+                                v-if="!document.legal_hold_active && document.retention_schedule"
+                                type="button"
+                                @click="submitDisposition"
+                                class="inline-flex items-center gap-1 rounded border border-slate-300 px-2.5 py-1 font-semibold text-slate-800 hover:bg-slate-50"
+                            >
+                                <ShieldCheck class="h-3 w-3" /> Initiate 2P Disposition
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

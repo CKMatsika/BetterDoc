@@ -10,12 +10,14 @@ use App\Models\Document;
 use App\Models\User;
 use App\Models\UserSession;
 use App\Services\Audit\ImmutableAuditLogger;
+use App\Services\Collaboration\RealtimeNotificationService;
 use Illuminate\Http\Request;
 
 class BreakGlassService
 {
     public function __construct(
         private readonly ImmutableAuditLogger $audit,
+        private readonly RealtimeNotificationService $notifications,
     ) {}
 
     public function requestAccess(
@@ -56,6 +58,8 @@ class BreakGlassService
             request: $request,
         );
 
+        $this->notifications->notifyBreakGlassAlert($session, 'requested');
+
         return $session;
     }
 
@@ -86,6 +90,8 @@ class BreakGlassService
             after: ['break_glass_session_id' => $bgSession->id],
             request: $request,
         );
+
+        $this->notifications->notifyBreakGlassAlert($bgSession, 'first_approved');
 
         return $bgSession->refresh();
     }
@@ -134,6 +140,8 @@ class BreakGlassService
             request: $request,
         );
 
+        $this->notifications->notifyBreakGlassAlert($bgSession, 'activated');
+
         return $bgSession->refresh();
     }
 
@@ -158,6 +166,8 @@ class BreakGlassService
             after: ['break_glass_session_id' => $bgSession->id],
             request: $request,
         );
+
+        $this->notifications->notifyBreakGlassAlert($bgSession, 'revoked');
 
         return $bgSession->refresh();
     }

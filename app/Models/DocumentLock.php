@@ -13,6 +13,8 @@ use Illuminate\Support\Carbon;
  * @property string $tenant_id
  * @property string $locked_by
  * @property string $lock_type
+ * @property string|null $wopi_lock_id
+ * @property string|null $wopi_session_id
  * @property string|null $checkout_note
  * @property Carbon $locked_at
  * @property Carbon $expires_at
@@ -33,6 +35,8 @@ class DocumentLock extends Model
         'tenant_id',
         'locked_by',
         'lock_type',
+        'wopi_lock_id',
+        'wopi_session_id',
         'checkout_note',
         'locked_at',
         'expires_at',

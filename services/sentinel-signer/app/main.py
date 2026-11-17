@@ -8,7 +8,7 @@ from typing import Any
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from app import pki_engine, signing_engine
+from app import pki_engine, redaction_engine, signing_engine
 
 app = FastAPI(title="SENTINEL PAdES & PKCS#11 Signer")
 
@@ -76,3 +76,39 @@ def verify_pdf_endpoint(body: VerifyPdfBody) -> dict[str, Any]:
         crl_der=base64.b64decode(body.crl_der_b64) if body.crl_der_b64 else None,
         ocsps_der=[base64.b64decode(b) for b in body.ocsps_der_b64 if b],
     )
+
+
+class RedactPdfBody(BaseModel):
+    pdf_b64: str
+    boxes: list[dict[str, Any]]
+    scrub_metadata: bool = True
+
+
+class RenderHtmlPdfBody(BaseModel):
+    html_body: str
+    title: str
+    classification_banner: str = ""
+    doc_number: str = ""
+
+
+@app.post("/redact/pdf")
+def redact_pdf_endpoint(body: RedactPdfBody) -> dict[str, Any]:
+    res = redaction_engine.redact_pdf(
+        pdf_bytes=base64.b64decode(body.pdf_b64),
+        boxes=body.boxes,
+        scrub_metadata=body.scrub_metadata,
+    )
+    res["redacted_pdf_b64"] = base64.b64encode(res.pop("redacted_pdf_bytes")).decode("ascii")
+    return res
+
+
+@app.post("/render/html-pdf")
+def render_html_pdf_endpoint(body: RenderHtmlPdfBody) -> dict[str, Any]:
+    res = redaction_engine.render_html_to_pdf(
+        html_body=body.html_body,
+        title=body.title,
+        classification_banner=body.classification_banner,
+        doc_number=body.doc_number,
+    )
+    res["pdf_b64"] = base64.b64encode(res.pop("pdf_bytes")).decode("ascii")
+    return res

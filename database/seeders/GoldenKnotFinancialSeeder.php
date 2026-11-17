@@ -211,6 +211,8 @@ class GoldenKnotFinancialSeeder extends Seeder
             $seedDoc('GK/CRD/2026/210', 'Mashonaland Agri-Inputs Facility Appraisal', 'Internal credit scoring memo and collateral schedule.', $cabLoans, $folderKyc, $branch, $branchMgr, 2, ['CREDIT']);
             $seedDoc('GK/AML/2026/007', 'STR Filing — Cross-Border Remittance Anomaly', 'Restricted Financial Intelligence Unit suspicious transaction filing.', $cabTreasury, $folderAml, $hq, $cro, 3, ['KYC_AML']);
             $seedDoc('GK/HR/2026/044', 'Confidential HR Inquiry — Credit Policy Deviation', 'Restricted HR review shielded from the subject employee.', $cabTreasury, $folderAml, $branch, $cro, 2, ['HR'], $analyst, true);
+
+            SeedPhase4DefaultsHelper::seedDefaults($tenant, $cro);
         });
 
         if (! app()->runningUnitTests()) {

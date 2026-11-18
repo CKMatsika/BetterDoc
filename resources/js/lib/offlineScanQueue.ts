@@ -12,7 +12,7 @@ export interface OfflineQueuedScan {
     blob: Blob;
 }
 
-const DB_NAME = 'sentinel_offline_scans_db';
+const DB_NAME = 'betterdoc_offline_scans_db';
 const STORE_NAME = 'pending_scans';
 
 function openDb(): Promise<IDBDatabase> {

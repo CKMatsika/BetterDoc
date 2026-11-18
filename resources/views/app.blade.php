@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#0F172A">
-    <title inertia>{{ config('app.name', 'SENTINEL DMS') }}</title>
-    <link rel="icon" type="image/svg+xml" href="/sentinel-icon.svg">
+    <title inertia>{{ config('app.name', 'BetterDoc DMS') }}</title>
+    <link rel="icon" type="image/svg+xml" href="/betterdoc-icon.svg">
     <link rel="manifest" href="/manifest.webmanifest">
     @vite(['resources/css/app.css', 'resources/js/app.ts'])
     @inertiaHead

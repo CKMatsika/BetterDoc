@@ -50,10 +50,10 @@ class IdpExtractionService
 
         $docType = $this->classifyDocType($text, $document->title);
         $fields = $this->extractFieldsForType($docType, $text);
-        $modelUsed = 'sentinel-idp-zeroshot-v1';
+        $modelUsed = 'betterdoc-idp-zeroshot-v1';
 
         // If Ollama LLM runtime is enabled and responsive, allow enrichment without blocking deterministic extraction
-        if (config()->string('sentinel.ai.driver', 'local_hybrid') === 'ollama') {
+        if (config()->string('betterdoc.ai.driver', 'local_hybrid') === 'ollama') {
             $gen = $this->ai->generateText(
                 'Extract concise JSON key-value metadata fields for doc_type='.$docType->value.' with keys: vendor_name, invoice_number, total_amount, currency, vat_amount, po_number, date, counterparty, subject. Respond JSON only.',
                 mb_substr($text, 0, 2500),

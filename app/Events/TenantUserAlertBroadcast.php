@@ -37,7 +37,7 @@ class TenantUserAlertBroadcast implements ShouldBroadcastNow
 
     public function broadcastAs(): string
     {
-        return 'sentinel.user.alert';
+        return 'betterdoc.user.alert';
     }
 
     /**

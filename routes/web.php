@@ -23,7 +23,7 @@ Route::post('/wopi/files/{documentId}', [WopiController::class, 'postFile'])->na
 Route::get('/wopi/files/{documentId}/contents', [WopiController::class, 'getFile'])->name('wopi.get_file');
 Route::post('/wopi/files/{documentId}/contents', [WopiController::class, 'putFile'])->name('wopi.put_file');
 
-// Phase 6: Workstation Sentinel Local Agent Token API (127.0.0.1 TWAIN/WIA & PKCS#11 bridge)
+// Phase 6: Workstation BetterDoc Local Agent Token API (127.0.0.1 TWAIN/WIA & PKCS#11 bridge)
 Route::post('/local-agent/pair', [PrintScanController::class, 'completeAgentPairing'])->name('local_agent.pair');
 Route::post('/local-agent/scan', [PrintScanController::class, 'ingestAgentScan'])->name('local_agent.scan');
 
@@ -43,7 +43,7 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/mfa-challenge', [MfaController::class, 'verifyChallenge'])->name('mfa.verify');
     Route::post('/security/mfa/step-up', [MfaController::class, 'stepUp'])->name('security.mfa.step_up');
 
-    // Protected SENTINEL DMS workspace routes (Session + MFA + PostgreSQL RLS + Policy Engine)
+    // Protected BetterDoc DMS workspace routes (Session + MFA + PostgreSQL RLS + Policy Engine)
     Route::middleware('mfa.enforced')->group(function (): void {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

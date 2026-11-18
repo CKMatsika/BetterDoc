@@ -252,7 +252,7 @@ it('splits multi-doc rasterized scanned PDFs accurately at Barcode Separator She
     file_put_contents($sep1Path, $sep1Pdf);
     file_put_contents($sep2Path, $sep2Pdf);
 
-    $pythonBin = config()->string('sentinel.pki.python_bin', 'python');
+    $pythonBin = config()->string('betterdoc.pki.python_bin', 'python');
     $pyScript = <<<'PY'
 import sys, pymupdf
 s1 = pymupdf.open(sys.argv[1])
@@ -328,8 +328,8 @@ PY;
     // 2. Test Hot Folder & Local Mail-In .eml polling cleanly in isolated temp subdirs
     $hfSub = 'test-hf-'.substr(bin2hex(random_bytes(4)), 0, 8);
     $mailSub = 'test-mail-'.substr(bin2hex(random_bytes(4)), 0, 8);
-    $hfRoot = rtrim(config()->string('sentinel.print_scan.hot_folder_root'), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$hfSub;
-    $mailRoot = rtrim(config()->string('sentinel.print_scan.mail_in_root'), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$mailSub;
+    $hfRoot = rtrim(config()->string('betterdoc.print_scan.hot_folder_root'), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$hfSub;
+    $mailRoot = rtrim(config()->string('betterdoc.print_scan.mail_in_root'), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$mailSub;
     mkdir($hfRoot, 0750, true);
     mkdir($mailRoot, 0750, true);
 
@@ -392,7 +392,7 @@ PY;
         );
         expect($mailIngested)->toBeTrue();
 
-        $this->artisan('sentinel:scan:poll', ['--tenant' => $tenant->id])->assertExitCode(0);
+        $this->artisan('betterdoc:scan:poll', ['--tenant' => $tenant->id])->assertExitCode(0);
 
         // 3. Test PWA Mobile Camera PNG Auto-Deskew/Border Crop & LAN eSCL/AirScan Polling
         $pngPath = tempnam(sys_get_temp_dir(), 'pwa_cam_').'.png';
@@ -455,7 +455,7 @@ PY;
     }
 });
 
-it('pairs Sentinel Local Agent via one-time code, ingests TWAIN/WIA workstation scans over bearer token, and honors revocation', function (): void {
+it('pairs BetterDoc Local Agent via one-time code, ingests TWAIN/WIA workstation scans over bearer token, and honors revocation', function (): void {
     /** @var Tenant $tenant */
     $tenant = Tenant::query()->where('slug', 'afz-defence')->firstOrFail();
     /** @var User $wgCdr */
@@ -502,7 +502,7 @@ it('pairs Sentinel Local Agent via one-time code, ingests TWAIN/WIA workstation 
     unset($samplePdf);
 
     $scanRes = $this->withHeaders([
-        'X-Sentinel-Agent-Token' => $bearerToken,
+        'X-BetterDoc-Agent-Token' => $bearerToken,
     ])->postJson('/local-agent/scan', [
         'cabinet_id' => $cab->id,
         'classification_level_id' => $restrictedLevel->id,
@@ -518,7 +518,7 @@ it('pairs Sentinel Local Agent via one-time code, ingests TWAIN/WIA workstation 
     $this->post("/print-scan/agents/{$agentId}/revoke")->assertRedirect();
 
     $this->withHeaders([
-        'X-Sentinel-Agent-Token' => $bearerToken,
+        'X-BetterDoc-Agent-Token' => $bearerToken,
     ])->postJson('/local-agent/scan', [
         'cabinet_id' => $cab->id,
         'classification_level_id' => $restrictedLevel->id,

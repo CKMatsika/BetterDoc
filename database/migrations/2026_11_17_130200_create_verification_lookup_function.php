@@ -15,7 +15,7 @@ return new class extends Migration
         }
 
         DB::statement(<<<'SQL'
-            CREATE OR REPLACE FUNCTION sentinel_verify_token_lookup(p_token char(32))
+            CREATE OR REPLACE FUNCTION betterdoc_verify_token_lookup(p_token char(32))
             RETURNS jsonb
             LANGUAGE plpgsql
             SECURITY DEFINER
@@ -94,9 +94,9 @@ return new class extends Migration
         DB::statement(<<<'SQL'
             DO $$
             BEGIN
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'sentinel_app') THEN
-                    REVOKE ALL ON FUNCTION sentinel_verify_token_lookup(char(32)) FROM PUBLIC;
-                    GRANT EXECUTE ON FUNCTION sentinel_verify_token_lookup(char(32)) TO sentinel_app;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'betterdoc_app') THEN
+                    REVOKE ALL ON FUNCTION betterdoc_verify_token_lookup(char(32)) FROM PUBLIC;
+                    GRANT EXECUTE ON FUNCTION betterdoc_verify_token_lookup(char(32)) TO betterdoc_app;
                 END IF;
             END
             $$;
@@ -109,6 +109,6 @@ return new class extends Migration
             return;
         }
 
-        DB::statement('DROP FUNCTION IF EXISTS sentinel_verify_token_lookup(char(32))');
+        DB::statement('DROP FUNCTION IF EXISTS betterdoc_verify_token_lookup(char(32))');
     }
 };

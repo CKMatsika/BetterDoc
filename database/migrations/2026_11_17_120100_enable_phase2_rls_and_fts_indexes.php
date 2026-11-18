@@ -17,11 +17,11 @@ return new class extends Migration
         DB::statement(<<<'SQL'
             DO $$
             BEGIN
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'sentinel_app') THEN
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO sentinel_app;
-                    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO sentinel_app;
-                    REVOKE UPDATE, DELETE, TRUNCATE ON audit_events FROM sentinel_app;
-                    GRANT SELECT, INSERT ON audit_events TO sentinel_app;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'betterdoc_app') THEN
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO betterdoc_app;
+                    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO betterdoc_app;
+                    REVOKE UPDATE, DELETE, TRUNCATE ON audit_events FROM betterdoc_app;
+                    GRANT SELECT, INSERT ON audit_events TO betterdoc_app;
                 END IF;
             END
             $$;
@@ -34,13 +34,13 @@ return new class extends Migration
             CREATE POLICY document_versions_mac_access ON document_versions
             FOR ALL
             USING (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 AND EXISTS (
                     SELECT 1 FROM documents d WHERE d.id = document_versions.document_id
                 )
             )
             WITH CHECK (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
             )
         SQL);
 
@@ -51,13 +51,13 @@ return new class extends Migration
             CREATE POLICY correspondence_registry_mac_access ON correspondence_registry
             FOR ALL
             USING (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 AND EXISTS (
                     SELECT 1 FROM documents d WHERE d.id = correspondence_registry.document_id
                 )
             )
             WITH CHECK (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
             )
         SQL);
 
@@ -68,12 +68,12 @@ return new class extends Migration
             CREATE POLICY upload_sessions_owner_isolation ON upload_sessions
             FOR ALL
             USING (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
-                AND user_id = NULLIF(current_setting('sentinel.user_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
+                AND user_id = NULLIF(current_setting('betterdoc.user_id', true), '')::uuid
             )
             WITH CHECK (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
-                AND user_id = NULLIF(current_setting('sentinel.user_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
+                AND user_id = NULLIF(current_setting('betterdoc.user_id', true), '')::uuid
             )
         SQL);
 
@@ -84,15 +84,15 @@ return new class extends Migration
             CREATE POLICY saved_smart_views_isolation ON saved_smart_views
             FOR ALL
             USING (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 AND (
                     is_shared = true
-                    OR user_id = NULLIF(current_setting('sentinel.user_id', true), '')::uuid
+                    OR user_id = NULLIF(current_setting('betterdoc.user_id', true), '')::uuid
                 )
             )
             WITH CHECK (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
-                AND user_id = NULLIF(current_setting('sentinel.user_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
+                AND user_id = NULLIF(current_setting('betterdoc.user_id', true), '')::uuid
             )
         SQL);
 
@@ -103,10 +103,10 @@ return new class extends Migration
                 CREATE POLICY {$table}_tenant_isolation ON {$table}
                 FOR ALL
                 USING (
-                    tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                    tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 )
                 WITH CHECK (
-                    tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                    tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 )
             SQL);
         }

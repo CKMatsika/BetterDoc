@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { AlertTriangle, Check, KeyRound, X } from '@lucide/vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import type { SharedProps } from '@/types/sentinel';
+import type { SharedProps } from '@/types/betterdoc';
 
 interface TwoPersonItem {
     id: string;

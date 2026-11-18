@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { Lock, Shield, WifiOff, UserCheck } from '@lucide/vue';
 import ClassificationBadge from '@/Components/ClassificationBadge.vue';
-import type { SharedProps } from '@/types/sentinel';
+import type { SharedProps } from '@/types/betterdoc';
 
 interface DemoUser {
     id: string;
@@ -59,7 +59,7 @@ function demoSwitch(userId: string): void {
         <div class="flex items-center justify-between bg-slate-900 px-6 py-2 text-xs font-semibold tracking-wider uppercase border-b border-slate-800">
             <span class="flex items-center gap-2 text-sky-400">
                 <Shield class="h-4 w-4" />
-                SENTINEL DMS // LAN-FIRST CLASSIFIED PORTAL
+                BetterDoc DMS // LAN-FIRST CLASSIFIED PORTAL
             </span>
             <span class="flex items-center gap-1.5 font-mono text-emerald-400">
                 <WifiOff class="h-3.5 w-3.5" />
@@ -72,9 +72,9 @@ function demoSwitch(userId: string): void {
             <div class="lg:col-span-5">
                 <div class="rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-xl">
                     <div class="mb-6 flex items-center gap-3">
-                        <img src="/sentinel-icon.svg" alt="SENTINEL" class="h-10 w-10" />
+                        <img src="/betterdoc-icon.svg" alt="BetterDoc" class="h-10 w-10" />
                         <div>
-                            <h1 class="text-lg font-bold text-white">Sign in to SENTINEL</h1>
+                            <h1 class="text-lg font-bold text-white">Sign in to BetterDoc</h1>
                             <p class="text-xs text-slate-400">Local &amp; LDAPS Directory Authentication + Mandatory MFA</p>
                         </div>
                     </div>
@@ -117,7 +117,7 @@ function demoSwitch(userId: string): void {
                 </div>
             </div>
 
-            <!-- Demo Switcher (Only visible when SENTINEL_DEMO_SWITCHER=true) -->
+            <!-- Demo Switcher (Only visible when BETTERDOC_DEMO_SWITCHER=true) -->
             <div v-if="shared.app.demo_switcher_enabled && demoUsers.length > 0" class="lg:col-span-7">
                 <div class="rounded-xl border border-slate-800 bg-slate-900/70 p-6">
                     <div class="mb-4 flex items-center justify-between">
@@ -180,7 +180,7 @@ function demoSwitch(userId: string): void {
         </div>
 
         <div class="border-t border-slate-800 bg-slate-900 px-6 py-2 text-center text-[11px] text-slate-500">
-            SENTINEL DMS · Zero External CDN/Font Calls · Hardware/Offline TOTP + WebAuthn · PostgreSQL RLS Enforced
+            BetterDoc DMS · Zero External CDN/Font Calls · Hardware/Offline TOTP + WebAuthn · PostgreSQL RLS Enforced
         </div>
     </div>
 </template>

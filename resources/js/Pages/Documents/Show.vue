@@ -9,7 +9,7 @@ import DocumentCollaborationPanel from '@/Components/DocumentCollaborationPanel.
 import PdfWatermarkViewer from '@/Components/PdfWatermarkViewer.vue';
 import ResumableUploader from '@/Components/ResumableUploader.vue';
 import SigningPanel, { type EnvelopeItem, type SignatureVerificationPayload } from '@/Components/SigningPanel.vue';
-import type { DocumentAnnotationItem, DocumentCommentItem } from '@/types/sentinel';
+import type { DocumentAnnotationItem, DocumentCommentItem } from '@/types/betterdoc';
 
 interface VersionRow {
     id: string;

@@ -8,8 +8,8 @@ use App\Models\Document;
 use App\Models\Tenant;
 use App\Policies\DocumentPolicy;
 use App\Services\Profile\ProfileManager;
+use App\Services\Security\BetterDocHttpClientGuard;
 use App\Services\Security\DbSecurityContext;
-use App\Services\Security\SentinelHttpClientGuard;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
@@ -32,7 +32,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Hard runtime egress block in air-gapped mode for every Laravel Http:: client call
         Http::globalRequestMiddleware(
-            static fn (RequestInterface $request): RequestInterface => app(SentinelHttpClientGuard::class)->assertOutboundAllowed($request)
+            static fn (RequestInterface $request): RequestInterface => app(BetterDocHttpClientGuard::class)->assertOutboundAllowed($request)
         );
 
         // Guarantee PostgreSQL session security GUCs never bleed between Octane requests/tasks
@@ -58,7 +58,7 @@ class AppServiceProvider extends ServiceProvider
             'secure_print_default',
         ] as $featureName) {
             Feature::define($featureName, static function (Tenant $tenant) use ($featureName): bool {
-                if (config()->boolean('sentinel.air_gapped', true) && in_array($featureName, ['cloud_sync', 'cloud_ai'], true)) {
+                if (config()->boolean('betterdoc.air_gapped', true) && in_array($featureName, ['cloud_sync', 'cloud_ai'], true)) {
                     return false;
                 }
 

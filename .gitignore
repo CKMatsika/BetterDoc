@@ -30,5 +30,5 @@ Thumbs.db
 /services/*/.venv/
 /services/**/__pycache__/
 /storage/app/hsm/
-/storage/app/sentinel/
+/storage/app/betterdoc/
 /storage/framework/phpstan/

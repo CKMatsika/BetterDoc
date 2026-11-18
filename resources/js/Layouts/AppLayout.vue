@@ -23,8 +23,8 @@ import {
 } from '@lucide/vue';
 import ClassificationBanner from '@/Components/ClassificationBanner.vue';
 import ClassificationBadge from '@/Components/ClassificationBadge.vue';
-import { SentinelReverbClient } from '@/lib/reverbClient';
-import type { SharedProps } from '@/types/sentinel';
+import { BetterDocReverbClient } from '@/lib/reverbClient';
+import type { SharedProps } from '@/types/betterdoc';
 
 const page = usePage<{ props: SharedProps }>();
 const props = computed(() => page.props as unknown as SharedProps);
@@ -32,7 +32,7 @@ const user = computed(() => props.value.auth?.user ?? null);
 const tenant = computed(() => props.value.tenant ?? null);
 
 const showNotifMenu = ref(false);
-let reverbClient: SentinelReverbClient | null = null;
+let reverbClient: BetterDocReverbClient | null = null;
 
 const bannerColor = computed(() => user.value?.clearance?.color_hex ?? '#0F172A');
 const bannerLabel = computed(() => user.value?.clearance?.name ?? 'UNAUTHENTICATED');
@@ -60,7 +60,7 @@ function markNotificationRead(id: string, actionUrl: string | null): void {
 onMounted(() => {
     const revCfg = props.value.app?.reverb;
     if (revCfg?.enabled && user.value && tenant.value) {
-        reverbClient = new SentinelReverbClient(revCfg);
+        reverbClient = new BetterDocReverbClient(revCfg);
         reverbClient.connect();
         reverbClient.subscribe(`private-tenant.${tenant.value.id}.user.${user.value.id}`, () => {
             router.reload({ only: ['unreadNotificationsCount', 'unreadNotifications', 'pendingWorkflowTasksCount', 'pendingApprovalsCount'] });
@@ -105,10 +105,10 @@ const navItems = computed(() => [
             <aside class="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-slate-900 text-slate-100 md:flex">
                 <div class="border-b border-slate-800 px-5 py-4">
                     <div class="flex items-center gap-2.5">
-                        <img src="/sentinel-icon.svg" alt="SENTINEL" class="h-8 w-8 rounded-md" />
+                        <img src="/betterdoc-icon.svg" alt="BetterDoc" class="h-8 w-8 rounded-md" />
                         <div class="min-w-0">
                             <p class="truncate text-sm font-bold tracking-tight text-white">
-                                {{ tenant?.branding?.short_name ?? 'SENTINEL DMS' }}
+                                {{ tenant?.branding?.short_name ?? 'BetterDoc DMS' }}
                             </p>
                             <p class="truncate text-[11px] text-slate-400">
                                 {{ tenant?.name ?? 'LAN-First Document Vault' }}

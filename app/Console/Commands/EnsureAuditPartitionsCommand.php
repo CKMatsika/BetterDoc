@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class EnsureAuditPartitionsCommand extends Command
 {
-    protected $signature = 'sentinel:audit:ensure-partitions {--months=12 : Number of future months to pre-create}';
+    protected $signature = 'betterdoc:audit:ensure-partitions {--months=12 : Number of future months to pre-create}';
 
     protected $description = 'Ensure monthly declarative PostgreSQL partitions exist for audit_events.';
 

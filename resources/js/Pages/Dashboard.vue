@@ -4,7 +4,7 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import { FileText, FolderLock, ShieldAlert, UserCheck, Activity } from '@lucide/vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ClassificationBadge from '@/Components/ClassificationBadge.vue';
-import type { SharedProps } from '@/types/sentinel';
+import type { SharedProps } from '@/types/betterdoc';
 
 interface RecentDoc {
     id: string;
@@ -49,7 +49,7 @@ const shared = computed(() => page.props as unknown as SharedProps);
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-bold tracking-tight text-slate-900">
-                        {{ shared.tenant?.branding?.organization_name ?? 'SENTINEL Workspace' }}
+                        {{ shared.tenant?.branding?.organization_name ?? 'BetterDoc Workspace' }}
                     </h1>
                     <p class="text-sm text-slate-600">
                         Active Profile: <span class="font-semibold uppercase">{{ shared.tenant?.active_profile_code }}</span>

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
-enum SentinelRole: string
+enum BetterDocRole: string
 {
     case SystemAdmin = 'SystemAdmin';
     case RecordsOfficer = 'RecordsOfficer';

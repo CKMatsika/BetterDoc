@@ -65,7 +65,7 @@ defineProps<{
                     <span>WOPI Co-Editing Host Ready (Collabora Container Disabled in Standalone Dev Mode)</span>
                 </div>
                 <p class="text-slate-600">
-                    The Laravel WOPI Host endpoints (<code class="font-mono">CheckFileInfo</code>, <code class="font-mono">GetFile</code>, <code class="font-mono">PutFile</code>, and <code class="font-mono">Lock/Refresh/Unlock</code>) have issued an active RLS-enforced WOPI token for this session. Start the offline <code class="font-mono">collabora</code> container via Docker Compose and set <code class="font-mono">SENTINEL_COLLABORA_ENABLED=true</code> to render the live document editor frame here.
+                    The Laravel WOPI Host endpoints (<code class="font-mono">CheckFileInfo</code>, <code class="font-mono">GetFile</code>, <code class="font-mono">PutFile</code>, and <code class="font-mono">Lock/Refresh/Unlock</code>) have issued an active RLS-enforced WOPI token for this session. Start the offline <code class="font-mono">collabora</code> container via Docker Compose and set <code class="font-mono">BETTERDOC_COLLABORA_ENABLED=true</code> to render the live document editor frame here.
                 </p>
                 <div class="rounded-lg border border-slate-200 bg-slate-950 p-4 font-mono text-[11px] text-slate-200 space-y-1">
                     <div>WOPISrc: {{ wopiSession.wopi_src }}</div>

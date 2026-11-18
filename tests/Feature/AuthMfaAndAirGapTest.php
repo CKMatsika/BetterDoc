@@ -22,7 +22,7 @@ beforeEach(function (): void {
 it('enforces offline TOTP MFA challenge, account lockout, and IP CIDR restriction', function (): void {
     /** @var User $wgCdr */
     $wgCdr = User::query()->where('email', 'wgcdr.moyo@afz.mil.zw')->firstOrFail();
-    $demoPassword = (string) env('SENTINEL_DEMO_PASSWORD', 'SentinelDemo!2026');
+    $demoPassword = (string) env('BETTERDOC_DEMO_PASSWORD', 'BetterDocDemo!2026');
 
     // Login using Service Number succeeds and redirects to MFA challenge
     $this->post('/login', [
@@ -62,7 +62,7 @@ it('enforces offline TOTP MFA challenge, account lockout, and IP CIDR restrictio
 });
 
 it('hard-blocks outbound HTTP requests to external hosts in air-gapped mode while allowing local services', function (): void {
-    config()->set('sentinel.air_gapped', true);
+    config()->set('betterdoc.air_gapped', true);
     Http::fake(['*' => Http::response(['ok' => true], 200)]);
 
     expect(fn () => Http::get('https://api.openai.com/v1/models'))
@@ -96,7 +96,7 @@ it('seeds corporate portal with password-only login and allows Golden Knot Syste
     $corpTenant = Tenant::query()->where('slug', 'zimcorp-corporate')->firstOrFail();
     expect($corpTenant->active_profile_code)->toBe(ProfileCode::Corporate);
 
-    $demoPassword = config()->string('sentinel.demo_password', 'SentinelDemo!2026');
+    $demoPassword = config()->string('betterdoc.demo_password', 'BetterDocDemo!2026');
     $this->post('/login', [
         'identifier' => 'admin@zimcorp.co.zw',
         'password' => $demoPassword,

@@ -9,7 +9,7 @@ use Illuminate\Console\Command;
 
 class CheckWorkflowSlaEscalations extends Command
 {
-    protected $signature = 'sentinel:workflow:check-slas {--tenant= : Optional tenant UUID to scope check}';
+    protected $signature = 'betterdoc:workflow:check-slas {--tenant= : Optional tenant UUID to scope check}';
 
     protected $description = 'Check pending BPMN workflow tasks against SLA deadlines and escalate overdue steps';
 

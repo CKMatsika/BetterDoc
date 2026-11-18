@@ -176,7 +176,7 @@ class PdfRedactionService
             $nextMinor = (is_numeric($maxMinor) ? (int) $maxMinor : $sourceVersion->version_minor) + 1;
 
             $storageKey = "tenants/{$document->tenant_id}/docs/{$document->id}/v{$sourceVersion->version_major}_{$nextMinor}_{$newId}.enc";
-            $enc = $this->crypto->encryptFileToDisk($outPath, 'sentinel_vault', $storageKey);
+            $enc = $this->crypto->encryptFileToDisk($outPath, 'betterdoc_vault', $storageKey);
 
             $newVersion = DB::transaction(function () use (
                 $newId,
@@ -205,7 +205,7 @@ class PdfRedactionService
                     'version_major' => $sourceVersion->version_major,
                     'version_minor' => $nextMinor,
                     'is_current' => true,
-                    'storage_disk' => 'sentinel_vault',
+                    'storage_disk' => 'betterdoc_vault',
                     'storage_key' => $storageKey,
                     'original_filename' => preg_replace('/\.pdf$/i', '_redacted.pdf', $sourceVersion->original_filename) ?? 'redacted.pdf',
                     'mime_type' => 'application/pdf',

@@ -15,7 +15,7 @@ class LdapDirectoryService
 {
     public function isEnabled(): bool
     {
-        return config()->boolean('sentinel.ldap.enabled', false);
+        return config()->boolean('betterdoc.ldap.enabled', false);
     }
 
     /**
@@ -31,9 +31,9 @@ class LdapDirectoryService
             throw new RuntimeException('PHP LDAP extension is not installed on this runtime.');
         }
 
-        $host = config()->string('sentinel.ldap.host', '');
-        $port = config()->integer('sentinel.ldap.port', 636);
-        $useLdaps = config()->boolean('sentinel.ldap.use_ldaps', true);
+        $host = config()->string('betterdoc.ldap.host', '');
+        $port = config()->integer('betterdoc.ldap.port', 636);
+        $useLdaps = config()->boolean('betterdoc.ldap.use_ldaps', true);
 
         if ($host === '' || $password === '') {
             return null;
@@ -52,8 +52,8 @@ class LdapDirectoryService
             @ldap_start_tls($conn);
         }
 
-        $bindDn = config()->string('sentinel.ldap.bind_dn', '');
-        $bindPass = config()->string('sentinel.ldap.bind_password', '');
+        $bindDn = config()->string('betterdoc.ldap.bind_dn', '');
+        $bindPass = config()->string('betterdoc.ldap.bind_password', '');
 
         if ($bindDn !== '' && ! @ldap_bind($conn, $bindDn, $bindPass)) {
             @ldap_unbind($conn);
@@ -61,7 +61,7 @@ class LdapDirectoryService
             return null;
         }
 
-        $baseDn = config()->string('sentinel.ldap.base_dn', '');
+        $baseDn = config()->string('betterdoc.ldap.base_dn', '');
         $escapedUser = ldap_escape($username, '', LDAP_ESCAPE_FILTER);
         $search = @ldap_search($conn, $baseDn, "(|(mail={$escapedUser})(uid={$escapedUser})(sAMAccountName={$escapedUser}))");
 

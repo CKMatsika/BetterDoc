@@ -32,7 +32,7 @@ class DocumentSearchService
     public function search(User $user, string $query, array $filters = []): array
     {
         $started = microtime(true);
-        $driver = config()->string('sentinel.search.driver', 'postgres');
+        $driver = config()->string('betterdoc.search.driver', 'postgres');
         $trimmed = trim($query);
 
         if ($driver === 'meilisearch' && $trimmed !== '' && $this->meilisearchClient() !== null) {
@@ -83,7 +83,7 @@ class DocumentSearchService
     {
         $this->chunks?->indexDocument($document);
 
-        if (config()->string('sentinel.search.driver', 'postgres') !== 'meilisearch') {
+        if (config()->string('betterdoc.search.driver', 'postgres') !== 'meilisearch') {
             return;
         }
 
@@ -103,7 +103,7 @@ class DocumentSearchService
             }
         }
 
-        $client->index('sentinel_documents')->addDocuments([[
+        $client->index('betterdoc_documents')->addDocuments([[
             'id' => $document->id,
             'tenant_id' => $document->tenant_id,
             'cabinet_id' => $document->cabinet_id,
@@ -272,7 +272,7 @@ class DocumentSearchService
             $filterParts[] = "cabinet_id = \"{$filters['cabinet_id']}\"";
         }
 
-        $res = $client->index('sentinel_documents')->search($query, [
+        $res = $client->index('betterdoc_documents')->search($query, [
             'filter' => implode(' AND ', $filterParts),
             'facets' => ['classification_rank'],
             'limit' => min(100, max(1, (int) ($filters['limit'] ?? 50))),
@@ -337,8 +337,8 @@ class DocumentSearchService
 
     private function meilisearchClient(): ?Client
     {
-        $host = config()->string('sentinel.search.meilisearch_host', '');
-        $key = config()->string('sentinel.search.meilisearch_key', '');
+        $host = config()->string('betterdoc.search.meilisearch_host', '');
+        $key = config()->string('betterdoc.search.meilisearch_key', '');
         if ($host === '' || $key === '') {
             return null;
         }

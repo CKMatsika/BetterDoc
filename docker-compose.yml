@@ -1,5 +1,6 @@
 services:
   app:
+    image: betterdoc/app:local
     build:
       context: .
       dockerfile: infra/frankenphp/Dockerfile
@@ -7,12 +8,12 @@ services:
     environment:
       APP_ENV: ${APP_ENV:-production}
       APP_KEY: ${APP_KEY:?APP_KEY is required}
-      APP_URL: ${APP_URL:-https://sentinel.lan}
+      APP_URL: ${APP_URL:-https://betterdoc.lan}
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_DATABASE: ${DB_DATABASE:-sentinel}
-      DB_USERNAME: sentinel_app
+      DB_DATABASE: ${DB_DATABASE:-betterdoc}
+      DB_USERNAME: betterdoc_app
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       DB_ADMIN_USERNAME: ${DB_ADMIN_USERNAME:-postgres}
       DB_ADMIN_PASSWORD: ${DB_ADMIN_PASSWORD:?DB_ADMIN_PASSWORD is required}
@@ -24,11 +25,11 @@ services:
       BROADCAST_CONNECTION: reverb
       MEILISEARCH_HOST: http://meilisearch:7700
       MEILISEARCH_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY is required}
-      SENTINEL_AIR_GAPPED: ${SENTINEL_AIR_GAPPED:-true}
-      SENTINEL_HOSTING_MODE: ${SENTINEL_HOSTING_MODE:-air_gapped_on_prem}
-      SENTINEL_COLLABORA_ENABLED: ${SENTINEL_COLLABORA_ENABLED:-true}
-      SENTINEL_COLLABORA_URL: http://collabora:9980
-      SENTINEL_WOPI_BASE_URL: http://app:80
+      BETTERDOC_AIR_GAPPED: ${BETTERDOC_AIR_GAPPED:-true}
+      BETTERDOC_HOSTING_MODE: ${BETTERDOC_HOSTING_MODE:-air_gapped_on_prem}
+      BETTERDOC_COLLABORA_ENABLED: ${BETTERDOC_COLLABORA_ENABLED:-true}
+      BETTERDOC_COLLABORA_URL: http://collabora:9980
+      BETTERDOC_WOPI_BASE_URL: http://app:80
     ports:
       - "${APP_PORT:-8080}:80"
     depends_on:
@@ -37,10 +38,11 @@ services:
       valkey:
         condition: service_healthy
     networks:
-      - sentinel_lan
-      - sentinel_internal
+      - betterdoc_lan
+      - betterdoc_internal
 
   horizon:
+    image: betterdoc/horizon:local
     build:
       context: .
       dockerfile: infra/frankenphp/Dockerfile
@@ -52,22 +54,23 @@ services:
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_DATABASE: ${DB_DATABASE:-sentinel}
-      DB_USERNAME: sentinel_app
+      DB_DATABASE: ${DB_DATABASE:-betterdoc}
+      DB_USERNAME: betterdoc_app
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       REDIS_HOST: valkey
       REDIS_PASSWORD: ${VALKEY_PASSWORD:?VALKEY_PASSWORD is required}
       QUEUE_CONNECTION: redis
-      SENTINEL_AIR_GAPPED: ${SENTINEL_AIR_GAPPED:-true}
+      BETTERDOC_AIR_GAPPED: ${BETTERDOC_AIR_GAPPED:-true}
     depends_on:
       postgres:
         condition: service_healthy
       valkey:
         condition: service_healthy
     networks:
-      - sentinel_internal
+      - betterdoc_internal
 
   reverb:
+    image: betterdoc/reverb:local
     build:
       context: .
       dockerfile: infra/frankenphp/Dockerfile
@@ -78,7 +81,7 @@ services:
       APP_KEY: ${APP_KEY:?APP_KEY is required}
       REDIS_HOST: valkey
       REDIS_PASSWORD: ${VALKEY_PASSWORD:?VALKEY_PASSWORD is required}
-      REVERB_APP_ID: ${REVERB_APP_ID:-sentinel}
+      REVERB_APP_ID: ${REVERB_APP_ID:-betterdoc}
       REVERB_APP_KEY: ${REVERB_APP_KEY:?REVERB_APP_KEY is required}
       REVERB_APP_SECRET: ${REVERB_APP_SECRET:?REVERB_APP_SECRET is required}
     ports:
@@ -87,14 +90,14 @@ services:
       valkey:
         condition: service_healthy
     networks:
-      - sentinel_lan
-      - sentinel_internal
+      - betterdoc_lan
+      - betterdoc_internal
 
   postgres:
     image: pgvector/pgvector:pg17
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_DATABASE:-sentinel}
+      POSTGRES_DB: ${DB_DATABASE:-betterdoc}
       POSTGRES_USER: ${DB_ADMIN_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD:?DB_ADMIN_PASSWORD is required}
     command:
@@ -109,12 +112,12 @@ services:
       - pg_data:/var/lib/postgresql/data
       - ./infra/postgres/init-roles.sql:/docker-entrypoint-initdb.d/01-init-roles.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_ADMIN_USERNAME:-postgres} -d ${DB_DATABASE:-sentinel}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_ADMIN_USERNAME:-postgres} -d ${DB_DATABASE:-betterdoc}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - sentinel_internal
+      - betterdoc_internal
 
   valkey:
     image: valkey/valkey:8-alpine
@@ -128,7 +131,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - sentinel_internal
+      - betterdoc_internal
 
   meilisearch:
     image: getmeili/meilisearch:v1.12
@@ -140,7 +143,7 @@ services:
     volumes:
       - meili_data:/meili_data
     networks:
-      - sentinel_internal
+      - betterdoc_internal
 
   minio:
     image: minio/minio:latest
@@ -152,7 +155,7 @@ services:
     volumes:
       - minio_data:/data
     networks:
-      - sentinel_internal
+      - betterdoc_internal
 
   clamav:
     image: clamav/clamav:stable
@@ -160,16 +163,17 @@ services:
     volumes:
       - clamav_db:/var/lib/clamav
     networks:
-      - sentinel_internal
+      - betterdoc_internal
 
-  sentinel-ocr:
+  betterdoc-ocr:
+    image: betterdoc/ocr:local
     build:
-      context: ./services/sentinel-ocr
+      context: ./services/betterdoc-ocr
     restart: unless-stopped
     mem_limit: 1536m
     pids_limit: 128
     networks:
-      - sentinel_internal
+      - betterdoc_internal
 
   gotenberg:
     image: gotenberg/gotenberg:8
@@ -181,29 +185,31 @@ services:
     mem_limit: 1024m
     pids_limit: 128
     networks:
-      - sentinel_internal
+      - betterdoc_internal
 
-  sentinel-pki:
+  betterdoc-pki:
+    image: betterdoc/pki:local
     build:
-      context: ./services/sentinel-pki
+      context: ./services/betterdoc-pki
     restart: unless-stopped
     mem_limit: 256m
     pids_limit: 64
     volumes:
-      - pki_data:/var/lib/sentinel-pki
+      - pki_data:/var/lib/betterdoc-pki
     networks:
-      - sentinel_internal
+      - betterdoc_internal
 
-  sentinel-signer:
+  betterdoc-signer:
+    image: betterdoc/signer:local
     build:
-      context: ./services/sentinel-signer
+      context: ./services/betterdoc-signer
     restart: unless-stopped
     mem_limit: 512m
     pids_limit: 128
     depends_on:
-      - sentinel-pki
+      - betterdoc-pki
     networks:
-      - sentinel_internal
+      - betterdoc_internal
 
   ollama:
     image: ollama/ollama:0.6.2
@@ -215,13 +221,13 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     networks:
-      - sentinel_internal
+      - betterdoc_internal
 
   collabora:
     image: collabora/code:24.04.10.2.1
     restart: unless-stopped
     environment:
-      aliasgroup1: http://app:80,https://sentinel.lan
+      aliasgroup1: http://app:80,https://betterdoc.lan
       extra_params: "--o:ssl.enable=false --o:ssl.termination=true --o:user_interface.mode=notebookbar --o:home_mode.enable=false"
       dont_gen_ssl_cert: "true"
     cap_add:
@@ -229,8 +235,8 @@ services:
     mem_limit: 2048m
     pids_limit: 256
     networks:
-      - sentinel_lan
-      - sentinel_internal
+      - betterdoc_lan
+      - betterdoc_internal
 
   cups:
     image: olbat/cupsd:latest
@@ -238,7 +244,7 @@ services:
     volumes:
       - cups_data:/etc/cups
     networks:
-      - sentinel_internal
+      - betterdoc_internal
 
   prometheus:
     image: prom/prometheus:v3.1.0
@@ -247,7 +253,7 @@ services:
       - ./infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prom_data:/prometheus
     networks:
-      - sentinel_internal
+      - betterdoc_internal
 
   loki:
     image: grafana/loki:3.3.2
@@ -257,7 +263,7 @@ services:
       - ./infra/monitoring/loki-config.yml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
     networks:
-      - sentinel_internal
+      - betterdoc_internal
 
   grafana:
     image: grafana/grafana:11.4.0
@@ -272,13 +278,13 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
     networks:
-      - sentinel_lan
-      - sentinel_internal
+      - betterdoc_lan
+      - betterdoc_internal
 
 networks:
-  sentinel_lan:
+  betterdoc_lan:
     driver: bridge
-  sentinel_internal:
+  betterdoc_internal:
     driver: bridge
     internal: true
 

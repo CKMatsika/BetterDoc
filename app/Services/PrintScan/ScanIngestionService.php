@@ -17,8 +17,8 @@ use App\Models\User;
 use App\Services\Ai\IdpExtractionService;
 use App\Services\Audit\ImmutableAuditLogger;
 use App\Services\Ingestion\MalwareScannerService;
+use App\Services\Security\BetterDocHttpClientGuard;
 use App\Services\Security\DbSecurityContext;
-use App\Services\Security\SentinelHttpClientGuard;
 use App\Services\Upload\ResumableUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -36,7 +36,7 @@ class ScanIngestionService
         private readonly IdpExtractionService $idp,
         private readonly ImmutableAuditLogger $audit,
         private readonly DbSecurityContext $dbContext,
-        private readonly SentinelHttpClientGuard $guard,
+        private readonly BetterDocHttpClientGuard $guard,
     ) {}
 
     /**
@@ -271,7 +271,7 @@ class ScanIngestionService
         $batches = [];
 
         if ($source->source_type === ScanSourceType::HotFolder) {
-            $dir = $this->resolveSafeDropPath($source->endpoint_or_path, config()->string('sentinel.print_scan.hot_folder_root'));
+            $dir = $this->resolveSafeDropPath($source->endpoint_or_path, config()->string('betterdoc.print_scan.hot_folder_root'));
             if (is_dir($dir)) {
                 $processedDir = $dir.DIRECTORY_SEPARATOR.'processed';
                 if (! is_dir($processedDir)) {
@@ -313,7 +313,7 @@ class ScanIngestionService
                 }
             }
         } elseif ($source->source_type === ScanSourceType::MailIn) {
-            $dir = $this->resolveSafeDropPath($source->endpoint_or_path, config()->string('sentinel.print_scan.mail_in_root'));
+            $dir = $this->resolveSafeDropPath($source->endpoint_or_path, config()->string('betterdoc.print_scan.mail_in_root'));
             if (is_dir($dir)) {
                 $processedDir = $dir.DIRECTORY_SEPARATOR.'processed';
                 if (! is_dir($processedDir)) {

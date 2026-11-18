@@ -62,54 +62,54 @@ return [
             'report' => false,
         ],
 
-        'sentinel_quarantine' => env('SENTINEL_STORAGE_DRIVER', 'local') === 's3'
+        'betterdoc_quarantine' => env('BETTERDOC_STORAGE_DRIVER', 'local') === 's3'
             ? [
                 'driver' => 's3',
                 'key' => env('MINIO_ACCESS_KEY', env('AWS_ACCESS_KEY_ID')),
                 'secret' => env('MINIO_SECRET_KEY', env('AWS_SECRET_ACCESS_KEY')),
                 'region' => env('MINIO_REGION', 'us-east-1'),
-                'bucket' => env('SENTINEL_QUARANTINE_BUCKET', 'sentinel-quarantine'),
+                'bucket' => env('BETTERDOC_QUARANTINE_BUCKET', 'betterdoc-quarantine'),
                 'endpoint' => env('MINIO_ENDPOINT', 'http://minio:9000'),
                 'use_path_style_endpoint' => true,
                 'throw' => true,
             ]
             : [
                 'driver' => 'local',
-                'root' => storage_path('app/sentinel/quarantine'),
+                'root' => storage_path('app/betterdoc/quarantine'),
                 'throw' => true,
             ],
 
-        'sentinel_vault' => env('SENTINEL_STORAGE_DRIVER', 'local') === 's3'
+        'betterdoc_vault' => env('BETTERDOC_STORAGE_DRIVER', 'local') === 's3'
             ? [
                 'driver' => 's3',
                 'key' => env('MINIO_ACCESS_KEY', env('AWS_ACCESS_KEY_ID')),
                 'secret' => env('MINIO_SECRET_KEY', env('AWS_SECRET_ACCESS_KEY')),
                 'region' => env('MINIO_REGION', 'us-east-1'),
-                'bucket' => env('SENTINEL_VAULT_BUCKET', 'sentinel-vault'),
+                'bucket' => env('BETTERDOC_VAULT_BUCKET', 'betterdoc-vault'),
                 'endpoint' => env('MINIO_ENDPOINT', 'http://minio:9000'),
                 'use_path_style_endpoint' => true,
                 'throw' => true,
             ]
             : [
                 'driver' => 'local',
-                'root' => storage_path('app/sentinel/vault'),
+                'root' => storage_path('app/betterdoc/vault'),
                 'throw' => true,
             ],
 
-        'sentinel_thumbnails' => env('SENTINEL_STORAGE_DRIVER', 'local') === 's3'
+        'betterdoc_thumbnails' => env('BETTERDOC_STORAGE_DRIVER', 'local') === 's3'
             ? [
                 'driver' => 's3',
                 'key' => env('MINIO_ACCESS_KEY', env('AWS_ACCESS_KEY_ID')),
                 'secret' => env('MINIO_SECRET_KEY', env('AWS_SECRET_ACCESS_KEY')),
                 'region' => env('MINIO_REGION', 'us-east-1'),
-                'bucket' => env('SENTINEL_THUMBNAILS_BUCKET', 'sentinel-thumbnails'),
+                'bucket' => env('BETTERDOC_THUMBNAILS_BUCKET', 'betterdoc-thumbnails'),
                 'endpoint' => env('MINIO_ENDPOINT', 'http://minio:9000'),
                 'use_path_style_endpoint' => true,
                 'throw' => true,
             ]
             : [
                 'driver' => 'local',
-                'root' => storage_path('app/sentinel/thumbnails'),
+                'root' => storage_path('app/betterdoc/thumbnails'),
                 'throw' => true,
             ],
 

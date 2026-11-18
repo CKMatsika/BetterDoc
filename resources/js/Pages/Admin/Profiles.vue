@@ -4,7 +4,7 @@ import { Head, router, usePage } from '@inertiajs/vue3';
 import { SlidersHorizontal } from '@lucide/vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ClassificationBadge from '@/Components/ClassificationBadge.vue';
-import type { SharedProps } from '@/types/sentinel';
+import type { SharedProps } from '@/types/betterdoc';
 
 defineProps<{
     availablePacks: {

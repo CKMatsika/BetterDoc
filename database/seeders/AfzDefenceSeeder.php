@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\BetterDocRole;
 use App\Enums\CertificateCustodyMode;
 use App\Enums\CorrespondenceDirection;
 use App\Enums\DocumentStatus;
 use App\Enums\ProfileCode;
-use App\Enums\SentinelRole;
 use App\Enums\TwoPersonActionType;
 use App\Models\Cabinet;
 use App\Models\ClearanceLevel;
@@ -36,7 +36,7 @@ class AfzDefenceSeeder extends Seeder
 {
     public function run(): void
     {
-        $demoPassword = config()->string('sentinel.demo_password', 'SentinelDemo!2026');
+        $demoPassword = config()->string('betterdoc.demo_password', 'BetterDocDemo!2026');
         $profiles = app(ProfileManager::class);
         $audit = app(ImmutableAuditLogger::class);
         $totp = app(TotpMfaService::class);
@@ -56,7 +56,7 @@ class AfzDefenceSeeder extends Seeder
         $profiles->applyToTenant($tenant, ProfileCode::Defence, syncTaxonomy: true);
 
         app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
-        foreach (SentinelRole::values() as $roleName) {
+        foreach (BetterDocRole::values() as $roleName) {
             Role::firstOrCreate([
                 'name' => $roleName,
                 'guard_name' => 'web',
@@ -102,7 +102,7 @@ class AfzDefenceSeeder extends Seeder
             string $rankTitle,
             OrgUnit $unit,
             int $rank,
-            SentinelRole $role,
+            BetterDocRole $role,
             array $compCodes,
         ) use ($tenant, $levels, $compartments, $demoPassword, $totp): User {
             $level = $levels[$rank];
@@ -139,12 +139,12 @@ class AfzDefenceSeeder extends Seeder
             return $user;
         };
 
-        $avm = $createUser('avm.chikwanda@afz.mil.zw', 'M. Chikwanda', 'AFZ-0001', 'Air Vice-Marshal', $hq, 4, SentinelRole::Approver, ['OPS', 'INTEL', 'PERS', 'LOG']);
-        $wgCdr = $createUser('wgcdr.moyo@afz.mil.zw', 'T. Moyo', 'AFZ-0142', 'Wing Commander', $opsWing, 3, SentinelRole::RecordsOfficer, ['OPS', 'INTEL']);
-        $sqnLdr = $createUser('sqnldr.ndlovu@afz.mil.zw', 'R. Ndlovu', 'AFZ-0488', 'Squadron Leader', $sigSqn, 2, SentinelRole::Author, ['OPS']);
-        $cpl = $createUser('cpl.sibanda@afz.mil.zw', 'K. Sibanda', 'AFZ-2190', 'Corporal', $sigSqn, 1, SentinelRole::Reader, []);
-        $sysAdmin = $createUser('fltlt.nyoni@afz.mil.zw', 'P. Nyoni', 'AFZ-0891', 'Flight Lieutenant', $hq, 1, SentinelRole::SystemAdmin, []);
-        $auditor = $createUser('gpcapt.dube@afz.mil.zw', 'V. Dube', 'AFZ-0305', 'Group Captain', $hq, 2, SentinelRole::Auditor, []);
+        $avm = $createUser('avm.chikwanda@afz.mil.zw', 'M. Chikwanda', 'AFZ-0001', 'Air Vice-Marshal', $hq, 4, BetterDocRole::Approver, ['OPS', 'INTEL', 'PERS', 'LOG']);
+        $wgCdr = $createUser('wgcdr.moyo@afz.mil.zw', 'T. Moyo', 'AFZ-0142', 'Wing Commander', $opsWing, 3, BetterDocRole::RecordsOfficer, ['OPS', 'INTEL']);
+        $sqnLdr = $createUser('sqnldr.ndlovu@afz.mil.zw', 'R. Ndlovu', 'AFZ-0488', 'Squadron Leader', $sigSqn, 2, BetterDocRole::Author, ['OPS']);
+        $cpl = $createUser('cpl.sibanda@afz.mil.zw', 'K. Sibanda', 'AFZ-2190', 'Corporal', $sigSqn, 1, BetterDocRole::Reader, []);
+        $sysAdmin = $createUser('fltlt.nyoni@afz.mil.zw', 'P. Nyoni', 'AFZ-0891', 'Flight Lieutenant', $hq, 1, BetterDocRole::SystemAdmin, []);
+        $auditor = $createUser('gpcapt.dube@afz.mil.zw', 'V. Dube', 'AFZ-0305', 'Group Captain', $hq, 2, BetterDocRole::Auditor, []);
 
         $secretOpsDoc = $dbContext->runAs($avm, function () use ($tenant, $sigSqn, $opsWing, $hq, $levels, $compartments, $audit, $dbContext, $avm, $wgCdr, $sqnLdr, $cpl, $twoPerson): Document {
             $cabGeneral = Cabinet::query()->firstOrCreate(

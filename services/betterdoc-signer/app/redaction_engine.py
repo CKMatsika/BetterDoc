@@ -52,7 +52,7 @@ def redact_pdf(
             )
 
         if scrub_metadata:
-            doc.set_metadata({"producer": "SENTINEL DMS True Redaction Engine"})
+            doc.set_metadata({"producer": "BetterDoc DMS True Redaction Engine"})
             try:
                 doc.del_xml_metadata()
             except Exception:

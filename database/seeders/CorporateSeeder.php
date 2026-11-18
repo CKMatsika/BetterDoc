@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\BetterDocRole;
 use App\Enums\CertificateCustodyMode;
 use App\Enums\DocumentStatus;
 use App\Enums\HostingMode;
 use App\Enums\ProfileCode;
-use App\Enums\SentinelRole;
 use App\Models\Cabinet;
 use App\Models\ClearanceLevel;
 use App\Models\Compartment;
@@ -32,7 +32,7 @@ class CorporateSeeder extends Seeder
 {
     public function run(): void
     {
-        $demoPassword = config()->string('sentinel.demo_password', 'SentinelDemo!2026');
+        $demoPassword = config()->string('betterdoc.demo_password', 'BetterDocDemo!2026');
         $profiles = app(ProfileManager::class);
         $audit = app(ImmutableAuditLogger::class);
         $totp = app(TotpMfaService::class);
@@ -43,7 +43,7 @@ class CorporateSeeder extends Seeder
             [
                 'name' => 'ZimCorp Commercial Holdings',
                 'hosting_mode' => HostingMode::LanWithCloudBackup->value,
-                'air_gapped' => (bool) config('sentinel.air_gapped', true),
+                'air_gapped' => (bool) config('betterdoc.air_gapped', true),
                 'active_profile_code' => ProfileCode::Corporate,
             ]
         );
@@ -51,7 +51,7 @@ class CorporateSeeder extends Seeder
         $profiles->applyToTenant($tenant, ProfileCode::Corporate, syncTaxonomy: true);
 
         app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
-        foreach (SentinelRole::values() as $roleName) {
+        foreach (BetterDocRole::values() as $roleName) {
             Role::firstOrCreate([
                 'name' => $roleName,
                 'guard_name' => 'web',
@@ -93,7 +93,7 @@ class CorporateSeeder extends Seeder
             string $rankTitle,
             OrgUnit $unit,
             int $rank,
-            SentinelRole $role,
+            BetterDocRole $role,
             array $compCodes,
         ) use ($tenant, $levels, $compartments, $demoPassword, $totp): User {
             $level = $levels[$rank];
@@ -129,10 +129,10 @@ class CorporateSeeder extends Seeder
             return $user;
         };
 
-        $sysAdmin = $createUser('admin@zimcorp.co.zw', 'K. Chitando', 'ZC-0001', 'IT & Systems Admin', $hq, 2, SentinelRole::SystemAdmin, ['EXEC', 'FINANCE']);
-        $director = $createUser('director@zimcorp.co.zw', 'R. Makoni', 'ZC-0010', 'Finance Director', $fin, 2, SentinelRole::Approver, ['EXEC', 'FINANCE']);
-        $opsLead = $createUser('ops.lead@zimcorp.co.zw', 'P. Dube', 'ZC-0102', 'Operations Manager', $ops, 1, SentinelRole::RecordsOfficer, ['FINANCE']);
-        $clerk = $createUser('clerk@zimcorp.co.zw', 'M. Mupfumi', 'ZC-0215', 'Procurement Officer', $fin, 1, SentinelRole::Author, []);
+        $sysAdmin = $createUser('admin@zimcorp.co.zw', 'K. Chitando', 'ZC-0001', 'IT & Systems Admin', $hq, 2, BetterDocRole::SystemAdmin, ['EXEC', 'FINANCE']);
+        $director = $createUser('director@zimcorp.co.zw', 'R. Makoni', 'ZC-0010', 'Finance Director', $fin, 2, BetterDocRole::Approver, ['EXEC', 'FINANCE']);
+        $opsLead = $createUser('ops.lead@zimcorp.co.zw', 'P. Dube', 'ZC-0102', 'Operations Manager', $ops, 1, BetterDocRole::RecordsOfficer, ['FINANCE']);
+        $clerk = $createUser('clerk@zimcorp.co.zw', 'M. Mupfumi', 'ZC-0215', 'Procurement Officer', $fin, 1, BetterDocRole::Author, []);
 
         $dbContext->runAs($director, function () use ($tenant, $hq, $fin, $ops, $levels, $compartments, $audit, $dbContext, $director, $opsLead, $clerk): void {
             $cabExec = Cabinet::query()->firstOrCreate(

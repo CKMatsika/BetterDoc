@@ -1,9 +1,9 @@
-// SENTINEL DMS Offline-First Air-Gap Service Worker
+// BetterDoc DMS Offline-First Air-Gap Service Worker
 // Strictly precaches static UI shell assets; never caches classified PDF streams or API payloads.
-const CACHE_NAME = 'sentinel-dms-shell-v1';
+const CACHE_NAME = 'betterdoc-dms-shell-v1';
 const STATIC_ASSETS = [
     '/manifest.webmanifest',
-    '/sentinel-icon.svg',
+    '/betterdoc-icon.svg',
 ];
 
 self.addEventListener('install', (event) => {

@@ -18,7 +18,7 @@ it('forbids UPDATE and DELETE on audit_events at both privilege and PostgreSQL t
     /** @var AuditEvent $firstEvent */
     $firstEvent = AuditEvent::query()->orderBy('seq_id')->firstOrFail();
 
-    // 1. Runtime role sentinel_app lacks UPDATE/DELETE privileges
+    // 1. Runtime role betterdoc_app lacks UPDATE/DELETE privileges
     expect(fn () => DB::table('audit_events')->where('seq_id', $firstEvent->seq_id)->update(['event_type' => 'tampered']))
         ->toThrow(QueryException::class);
 

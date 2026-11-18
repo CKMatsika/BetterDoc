@@ -60,7 +60,7 @@ async function startOrResumeUpload(): Promise<void> {
     paused.value = false;
     errorText.value = null;
 
-    const resumeKey = `sentinel_upload_${file.name}_${file.size}_${file.lastModified}_${props.documentId ?? 'new'}`;
+    const resumeKey = `betterdoc_upload_${file.name}_${file.size}_${file.lastModified}_${props.documentId ?? 'new'}`;
 
     try {
         statusText.value = 'Computing SHA-256 file digest...';

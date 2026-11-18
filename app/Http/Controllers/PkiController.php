@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\BetterDocRole;
 use App\Enums\CertificateCustodyMode;
-use App\Enums\SentinelRole;
 use App\Models\CertificateAuthority;
 use App\Models\Tenant;
 use App\Models\User;
@@ -33,7 +33,7 @@ class PkiController extends Controller
         /** @var Tenant $tenant */
         $tenant = Tenant::query()->findOrFail($user->tenant_id);
 
-        $isAdminOrRecords = $user->hasAnyRole([SentinelRole::SystemAdmin->value, SentinelRole::RecordsOfficer->value]);
+        $isAdminOrRecords = $user->hasAnyRole([BetterDocRole::SystemAdmin->value, BetterDocRole::RecordsOfficer->value]);
 
         $authorities = CertificateAuthority::query()
             ->where('tenant_id', $tenant->id)
@@ -101,7 +101,7 @@ class PkiController extends Controller
         /** @var User $user */
         $user = $request->user();
         abort_unless(
-            $user->hasAnyRole([SentinelRole::SystemAdmin->value, SentinelRole::RecordsOfficer->value]),
+            $user->hasAnyRole([BetterDocRole::SystemAdmin->value, BetterDocRole::RecordsOfficer->value]),
             403
         );
 
@@ -116,7 +116,7 @@ class PkiController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        $isAdminOrRecords = $user->hasAnyRole([SentinelRole::SystemAdmin->value, SentinelRole::RecordsOfficer->value]);
+        $isAdminOrRecords = $user->hasAnyRole([BetterDocRole::SystemAdmin->value, BetterDocRole::RecordsOfficer->value]);
 
         /** @var array{user_id?: ?string, custody_mode: string, valid_days?: ?int, csr_pem?: ?string, pkcs11_slot_id?: ?string} $validated */
         $validated = $request->validate([
@@ -160,7 +160,7 @@ class PkiController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        $isAdminOrRecords = $user->hasAnyRole([SentinelRole::SystemAdmin->value, SentinelRole::RecordsOfficer->value]);
+        $isAdminOrRecords = $user->hasAnyRole([BetterDocRole::SystemAdmin->value, BetterDocRole::RecordsOfficer->value]);
 
         if ($certificate->user_id !== $user->id && ! $isAdminOrRecords) {
             abort(403, 'Not authorized to revoke this certificate.');

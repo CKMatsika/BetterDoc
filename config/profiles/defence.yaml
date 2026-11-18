@@ -6,7 +6,7 @@ write_down_mode: strict
 
 branding:
   organization_name: "Air Force Command Document Registry"
-  short_name: "AFZ SENTINEL"
+  short_name: "AFZ BETTERDOC"
   primary_color: "#0F172A"
   accent_color: "#0284C7"
   banner_text_prefix: "DEFENCE NETWORK"

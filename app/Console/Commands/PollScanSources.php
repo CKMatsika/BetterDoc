@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Enums\SentinelRole;
+use App\Enums\BetterDocRole;
 use App\Models\ScanSource;
 use App\Models\Tenant;
 use App\Models\User;
@@ -14,7 +14,7 @@ use Illuminate\Console\Command;
 
 class PollScanSources extends Command
 {
-    protected $signature = 'sentinel:scan:poll {--tenant= : Optional tenant UUID to scope scan polling}';
+    protected $signature = 'betterdoc:scan:poll {--tenant= : Optional tenant UUID to scope scan polling}';
 
     protected $description = 'Poll active LAN hot folders, local mail-in dropboxes, and eSCL/AirScan scanners to split & catalog batches';
 
@@ -32,7 +32,7 @@ class PollScanSources extends Command
             $actor = User::query()
                 ->where('tenant_id', $tenant->id)
                 ->whereHas('roles', static function ($q): void {
-                    $q->whereIn('name', [SentinelRole::RecordsOfficer->value, SentinelRole::SystemAdmin->value]);
+                    $q->whereIn('name', [BetterDocRole::RecordsOfficer->value, BetterDocRole::SystemAdmin->value]);
                 })
                 ->first() ?? User::query()->where('tenant_id', $tenant->id)->first();
 

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\BetterDocRole;
 use App\Enums\CertificateCustodyMode;
 use App\Enums\DocumentStatus;
 use App\Enums\HostingMode;
 use App\Enums\ProfileCode;
-use App\Enums\SentinelRole;
 use App\Models\Cabinet;
 use App\Models\ClearanceLevel;
 use App\Models\Compartment;
@@ -32,7 +32,7 @@ class GoldenKnotFinancialSeeder extends Seeder
 {
     public function run(): void
     {
-        $demoPassword = config()->string('sentinel.demo_password', 'SentinelDemo!2026');
+        $demoPassword = config()->string('betterdoc.demo_password', 'BetterDocDemo!2026');
         $profiles = app(ProfileManager::class);
         $audit = app(ImmutableAuditLogger::class);
         $totp = app(TotpMfaService::class);
@@ -43,7 +43,7 @@ class GoldenKnotFinancialSeeder extends Seeder
             [
                 'name' => 'Golden Knot Financial Holdings',
                 'hosting_mode' => HostingMode::LanWithCloudBackup->value,
-                'air_gapped' => (bool) config('sentinel.air_gapped', true),
+                'air_gapped' => (bool) config('betterdoc.air_gapped', true),
                 'active_profile_code' => ProfileCode::Financial,
             ]
         );
@@ -51,7 +51,7 @@ class GoldenKnotFinancialSeeder extends Seeder
         $profiles->applyToTenant($tenant, ProfileCode::Financial, syncTaxonomy: true);
 
         app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
-        foreach (SentinelRole::values() as $roleName) {
+        foreach (BetterDocRole::values() as $roleName) {
             Role::firstOrCreate([
                 'name' => $roleName,
                 'guard_name' => 'web',
@@ -93,7 +93,7 @@ class GoldenKnotFinancialSeeder extends Seeder
             string $rankTitle,
             OrgUnit $unit,
             int $rank,
-            SentinelRole $role,
+            BetterDocRole $role,
             array $compCodes,
         ) use ($tenant, $levels, $compartments, $demoPassword, $totp): User {
             $level = $levels[$rank];
@@ -129,10 +129,10 @@ class GoldenKnotFinancialSeeder extends Seeder
             return $user;
         };
 
-        $sysAdmin = $createUser('sysadmin@golden-knot.co.zw', 'I. Ncube', 'GK-0005', 'IT Security Lead', $hq, 2, SentinelRole::SystemAdmin, ['KYC_AML', 'CREDIT', 'TREASURY', 'HR']);
-        $cro = $createUser('cro.gumbo@golden-knot.co.zw', 'N. Gumbo', 'GK-0010', 'Chief Risk Officer', $hq, 3, SentinelRole::Approver, ['KYC_AML', 'CREDIT', 'TREASURY', 'HR']);
-        $branchMgr = $createUser('mgr.mutasa@golden-knot.co.zw', 'S. Mutasa', 'GK-0104', 'Branch Manager', $branch, 2, SentinelRole::RecordsOfficer, ['KYC_AML', 'CREDIT']);
-        $analyst = $createUser('analyst.chigumba@golden-knot.co.zw', 'T. Chigumba', 'GK-0412', 'Credit Analyst', $branch, 1, SentinelRole::Author, []);
+        $sysAdmin = $createUser('sysadmin@golden-knot.co.zw', 'I. Ncube', 'GK-0005', 'IT Security Lead', $hq, 2, BetterDocRole::SystemAdmin, ['KYC_AML', 'CREDIT', 'TREASURY', 'HR']);
+        $cro = $createUser('cro.gumbo@golden-knot.co.zw', 'N. Gumbo', 'GK-0010', 'Chief Risk Officer', $hq, 3, BetterDocRole::Approver, ['KYC_AML', 'CREDIT', 'TREASURY', 'HR']);
+        $branchMgr = $createUser('mgr.mutasa@golden-knot.co.zw', 'S. Mutasa', 'GK-0104', 'Branch Manager', $branch, 2, BetterDocRole::RecordsOfficer, ['KYC_AML', 'CREDIT']);
+        $analyst = $createUser('analyst.chigumba@golden-knot.co.zw', 'T. Chigumba', 'GK-0412', 'Credit Analyst', $branch, 1, BetterDocRole::Author, []);
 
         $dbContext->runAs($cro, function () use ($tenant, $branch, $hq, $levels, $compartments, $audit, $dbContext, $cro, $branchMgr, $analyst): void {
             $cabLoans = Cabinet::query()->firstOrCreate(

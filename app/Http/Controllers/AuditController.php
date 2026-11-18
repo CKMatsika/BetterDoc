@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\SentinelRole;
+use App\Enums\BetterDocRole;
 use App\Models\AuditCheckpoint;
 use App\Models\AuditEvent;
 use App\Models\User;
@@ -28,7 +28,7 @@ class AuditController extends Controller
         app(PermissionRegistrar::class)->setPermissionsTeamId($user->tenant_id);
 
         abort_unless(
-            $user->hasAnyRole([SentinelRole::Auditor->value, SentinelRole::SystemAdmin->value, SentinelRole::RecordsOfficer->value]),
+            $user->hasAnyRole([BetterDocRole::Auditor->value, BetterDocRole::SystemAdmin->value, BetterDocRole::RecordsOfficer->value]),
             403
         );
 
@@ -65,7 +65,7 @@ class AuditController extends Controller
         $user = $request->user();
         app(PermissionRegistrar::class)->setPermissionsTeamId($user->tenant_id);
 
-        abort_unless($user->hasRole(SentinelRole::Auditor->value), 403);
+        abort_unless($user->hasRole(BetterDocRole::Auditor->value), 403);
 
         $tenant = $user->tenant;
         abort_if($tenant === null, 404);

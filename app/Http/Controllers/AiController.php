@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\AnomalyStatus;
+use App\Enums\BetterDocRole;
 use App\Enums\IdpReviewStatus;
-use App\Enums\SentinelRole;
 use App\Exceptions\AirGapViolationException;
 use App\Exceptions\WriteDownViolationException;
 use App\Models\AiAnomalyAlert;
@@ -96,7 +96,7 @@ class AiController extends Controller
             ->values()
             ->all();
 
-        $canManageAnomalies = $user->hasAnyRole([SentinelRole::Auditor->value, SentinelRole::SystemAdmin->value]);
+        $canManageAnomalies = $user->hasAnyRole([BetterDocRole::Auditor->value, BetterDocRole::SystemAdmin->value]);
 
         $alerts = $canManageAnomalies
             ? AiAnomalyAlert::query()
@@ -170,10 +170,10 @@ class AiController extends Controller
             'cabinets' => $cabinets,
             'allowedClearances' => $allowedClearances,
             'aiStatus' => [
-                'driver' => config()->string('sentinel.ai.driver', 'local_hybrid'),
-                'chat_model' => config()->string('sentinel.ai.chat_model', 'qwen2.5:7b-instruct'),
-                'embed_model' => config()->string('sentinel.ai.embed_model', 'bge-m3'),
-                'cloud_ai_blocked' => config()->boolean('sentinel.air_gapped', true),
+                'driver' => config()->string('betterdoc.ai.driver', 'local_hybrid'),
+                'chat_model' => config()->string('betterdoc.ai.chat_model', 'qwen2.5:7b-instruct'),
+                'embed_model' => config()->string('betterdoc.ai.embed_model', 'bge-m3'),
+                'cloud_ai_blocked' => config()->boolean('betterdoc.air_gapped', true),
             ],
             'canManageAnomalies' => $canManageAnomalies,
         ]);
@@ -357,7 +357,7 @@ class AiController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        abort_unless($user->hasAnyRole([SentinelRole::Auditor->value, SentinelRole::SystemAdmin->value]), 403);
+        abort_unless($user->hasAnyRole([BetterDocRole::Auditor->value, BetterDocRole::SystemAdmin->value]), 403);
         $created = $this->anomalies->scanTenant($user->tenant_id, $user);
 
         return back()->with('success', 'Security anomaly scan finished: '.count($created).' new alert(s) raised.');
@@ -367,7 +367,7 @@ class AiController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        abort_unless($user->hasAnyRole([SentinelRole::Auditor->value, SentinelRole::SystemAdmin->value]) && $aiAnomalyAlert->tenant_id === $user->tenant_id, 403);
+        abort_unless($user->hasAnyRole([BetterDocRole::Auditor->value, BetterDocRole::SystemAdmin->value]) && $aiAnomalyAlert->tenant_id === $user->tenant_id, 403);
 
         /** @var array{status: string} $validated */
         $validated = $request->validate([

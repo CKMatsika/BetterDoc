@@ -21,7 +21,7 @@ export type ChannelEventHandler = (eventName: string, data: unknown) => void;
  * Lightweight zero-dependency Pusher/Reverb WebSocket client speaking LAN WebSocket + Laravel /broadcasting/auth.
  * Operates strictly within the local network with zero external CDN scripts.
  */
-export class SentinelReverbClient {
+export class BetterDocReverbClient {
     private ws: WebSocket | null = null;
     private socketId: string | null = null;
     private subscriptions = new Map<string, ChannelEventHandler>();

@@ -94,7 +94,7 @@ class TemplateGenerationService
             $docId = (string) Str::uuid7();
             $verId = (string) Str::uuid7();
             $storageKey = "tenants/{$actor->tenant_id}/docs/{$docId}/v1_0_{$verId}.enc";
-            $enc = $this->crypto->encryptFileToDisk($tmpOut, 'sentinel_vault', $storageKey);
+            $enc = $this->crypto->encryptFileToDisk($tmpOut, 'betterdoc_vault', $storageKey);
 
             $document = DB::transaction(function () use (
                 $docId,
@@ -154,7 +154,7 @@ class TemplateGenerationService
                     'version_major' => 1,
                     'version_minor' => 0,
                     'is_current' => true,
-                    'storage_disk' => 'sentinel_vault',
+                    'storage_disk' => 'betterdoc_vault',
                     'storage_key' => $storageKey,
                     'original_filename' => str_replace('/', '_', $docNumber).'.pdf',
                     'mime_type' => 'application/pdf',

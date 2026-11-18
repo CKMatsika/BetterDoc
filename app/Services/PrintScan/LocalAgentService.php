@@ -23,7 +23,7 @@ class LocalAgentService
     ) {}
 
     /**
-     * Initiate pairing for a desktop Sentinel Local Agent (USB TWAIN/WIA scanner & PKCS#11 bridge).
+     * Initiate pairing for a desktop BetterDoc Local Agent (USB TWAIN/WIA scanner & PKCS#11 bridge).
      *
      * @return array{agent: LocalAgent, pairing_code: string}
      */
@@ -121,7 +121,7 @@ class LocalAgentService
     }
 
     /**
-     * Resolve an authenticated User & LocalAgent from an incoming X-Sentinel-Agent-Token or Bearer token.
+     * Resolve an authenticated User & LocalAgent from an incoming X-BetterDoc-Agent-Token or Bearer token.
      *
      * @return array{agent: LocalAgent, user: User}|null
      */
@@ -161,7 +161,7 @@ class LocalAgentService
         return <<<PYTHON
 #!/usr/bin/env python3
 """
-SENTINEL DMS Local Workstation Agent (127.0.0.1 TWAIN/WIA Scanner & PKCS#11 Smartcard Bridge)
+BetterDoc DMS Local Workstation Agent (127.0.0.1 TWAIN/WIA Scanner & PKCS#11 Smartcard Bridge)
 Runs strictly locally on 127.0.0.1:48921 with zero external network calls.
 """
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -181,7 +181,7 @@ class AgentHandler(BaseHTTPRequestHandler):
                 "status": "ok",
                 "os": platform.system(),
                 "scanners": ["WIA/TWAIN Workstation Bridge"] if platform.system() == "Windows" else ["SANE Local USB Scanner"],
-                "pkcs11_module": os.environ.get("SENTINEL_PKCS11_LIB", "SoftHSM2 / OpenSC"),
+                "pkcs11_module": os.environ.get("BETTERDOC_PKCS11_LIB", "SoftHSM2 / OpenSC"),
             }
             body = json.dumps(payload).encode("utf-8")
             self.send_response(200)
@@ -192,7 +192,7 @@ class AgentHandler(BaseHTTPRequestHandler):
             self.send_error(404)
 
 if __name__ == "__main__":
-    print(f"SENTINEL Local Agent listening strictly on http://{BIND_HOST}:{BIND_PORT} -> {SERVER_URL}")
+    print(f"BetterDoc Local Agent listening strictly on http://{BIND_HOST}:{BIND_PORT} -> {SERVER_URL}")
     HTTPServer((BIND_HOST, BIND_PORT), AgentHandler).serve_forever()
 PYTHON;
     }
@@ -203,7 +203,7 @@ PYTHON;
     private function lookupAgentById(string $agentId): ?array
     {
         $row = DB::connection()->getDriverName() === 'pgsql'
-            ? DB::selectOne('SELECT id, tenant_id, user_id, pairing_code_hash, status FROM sentinel_lookup_local_agent_by_id(?)', [$agentId])
+            ? DB::selectOne('SELECT id, tenant_id, user_id, pairing_code_hash, status FROM betterdoc_lookup_local_agent_by_id(?)', [$agentId])
             : DB::table('local_agents')->where('id', $agentId)->first();
 
         if (! $row instanceof stdClass) {
@@ -225,7 +225,7 @@ PYTHON;
     private function lookupAgentByTokenHash(string $tokenHash): ?array
     {
         $row = DB::connection()->getDriverName() === 'pgsql'
-            ? DB::selectOne('SELECT id, tenant_id, user_id, status FROM sentinel_lookup_local_agent_by_token(?)', [$tokenHash])
+            ? DB::selectOne('SELECT id, tenant_id, user_id, status FROM betterdoc_lookup_local_agent_by_token(?)', [$tokenHash])
             : DB::table('local_agents')->where('token_hash', $tokenHash)->first();
 
         if (! $row instanceof stdClass) {

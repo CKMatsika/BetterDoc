@@ -7,11 +7,11 @@ namespace App\Services\Security;
 use App\Exceptions\AirGapViolationException;
 use Psr\Http\Message\RequestInterface;
 
-class SentinelHttpClientGuard
+class BetterDocHttpClientGuard
 {
     public function assertOutboundAllowed(RequestInterface $request): RequestInterface
     {
-        if (! (bool) config('sentinel.air_gapped', true)) {
+        if (! (bool) config('betterdoc.air_gapped', true)) {
             return $request;
         }
 
@@ -23,7 +23,7 @@ class SentinelHttpClientGuard
         }
 
         $allowed = [];
-        foreach (config()->array('sentinel.internal_allowlist_hosts', []) as $item) {
+        foreach (config()->array('betterdoc.internal_allowlist_hosts', []) as $item) {
             if (is_string($item) && $item !== '') {
                 $allowed[] = strtolower($item);
             }

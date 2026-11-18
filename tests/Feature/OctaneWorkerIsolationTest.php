@@ -28,7 +28,7 @@ it('leaves zero PostgreSQL RLS context bleed across sequential requests on the s
     $this->get("/documents/{$topSecret->id}")->assertOk();
 
     // After request completes, PostgreSQL session GUCs must be cleanly wiped
-    $leakedUser = DB::selectOne("SELECT current_setting('sentinel.user_id', true) AS uid");
+    $leakedUser = DB::selectOne("SELECT current_setting('betterdoc.user_id', true) AS uid");
     expect((string) ($leakedUser->uid ?? ''))->toBe('');
 
     // Request 2 on the same worker: Corporal (Rank 1) gets 404 on that exact Top Secret document

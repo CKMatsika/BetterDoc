@@ -43,7 +43,7 @@ class TwoPersonService
             throw new TwoPersonViolationException('A clear justification (at least 10 characters) is required.');
         }
 
-        $ttlHours = config()->integer('sentinel.security.two_person_ttl_hours', 24);
+        $ttlHours = config()->integer('betterdoc.security.two_person_ttl_hours', 24);
 
         $tpRequest = TwoPersonRequest::query()->create([
             'tenant_id' => $requester->tenant_id,
@@ -104,7 +104,7 @@ class TwoPersonService
             throw new TwoPersonViolationException('Approver clearance rank is below the target resource classification.');
         }
 
-        $ttl = config()->integer('sentinel.security.step_up_mfa_ttl_minutes', 5);
+        $ttl = config()->integer('betterdoc.security.step_up_mfa_ttl_minutes', 5);
         if ($approver->mfa_enforced && ($session === null || ! $session->isMfaFresh($ttl))) {
             throw new TwoPersonViolationException('Fresh MFA step-up verification is required before co-signing.');
         }

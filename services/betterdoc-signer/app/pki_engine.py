@@ -1,4 +1,4 @@
-"""X.509 Internal CA, CRL, and OCSP cryptographic primitives for SENTINEL DMS."""
+"""X.509 Internal CA, CRL, and OCSP cryptographic primitives for BetterDoc DMS."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ def bootstrap_tenant_pki(tenant_name: str, tenant_slug: str, ocsp_base_url: str,
     root_subject = x509.Name(
         [
             x509.NameAttribute(NameOID.ORGANIZATION_NAME, tenant_name[:64]),
-            x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, "SENTINEL Offline Trust Anchor"),
+            x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, "BetterDoc Offline Trust Anchor"),
             x509.NameAttribute(NameOID.COMMON_NAME, f"{tenant_slug.upper()} Offline Root CA"),
         ]
     )
@@ -84,7 +84,7 @@ def bootstrap_tenant_pki(tenant_name: str, tenant_slug: str, ocsp_base_url: str,
     inter_subject = x509.Name(
         [
             x509.NameAttribute(NameOID.ORGANIZATION_NAME, tenant_name[:64]),
-            x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, "SENTINEL Issuing Authority"),
+            x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, "BetterDoc Issuing Authority"),
             x509.NameAttribute(NameOID.COMMON_NAME, f"{tenant_slug.upper()} Issuing Intermediate CA"),
         ]
     )

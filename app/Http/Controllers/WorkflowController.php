@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\SentinelRole;
+use App\Enums\BetterDocRole;
 use App\Enums\WorkflowTaskStatus;
 use App\Exceptions\InsufficientClearanceException;
 use App\Models\Document;
@@ -97,7 +97,7 @@ class WorkflowController extends Controller
             'instances' => $instances,
             'documents' => $documents,
             'users' => $users,
-            'roles' => SentinelRole::values(),
+            'roles' => BetterDocRole::values(),
         ]);
     }
 

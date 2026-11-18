@@ -359,7 +359,7 @@ async function syncOfflineQueue(): Promise<void> {
             }
         }
         await refreshOfflineQueue();
-        pwaStatusMsg.value = `Synced ${synced} offline scan(s) cleanly into SENTINEL Vault.`;
+        pwaStatusMsg.value = `Synced ${synced} offline scan(s) cleanly into BetterDoc Vault.`;
         if (synced > 0) {
             router.reload({ only: ['scanBatches'] });
         }
@@ -801,16 +801,16 @@ function revokeAgent(agentId: string): void {
                 </div>
             </div>
 
-            <!-- TAB 4: SENTINEL LOCAL WORKSTATION AGENT -->
+            <!-- TAB 4: BetterDoc LOCAL WORKSTATION AGENT -->
             <div v-if="activeTab === 'agent'" class="space-y-6">
                 <div class="rounded-xl border border-slate-200 bg-white p-5 text-xs shadow-xs">
                     <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
                         <div class="flex items-center gap-2 font-bold text-slate-900">
                             <Laptop class="h-4 w-4 text-sky-700" />
-                            <span>Sentinel Local Workstation Agent (`127.0.0.1` TWAIN / WIA Scanner &amp; PKCS#11 Bridge)</span>
+                            <span>BetterDoc Local Workstation Agent (`127.0.0.1` TWAIN / WIA Scanner &amp; PKCS#11 Bridge)</span>
                         </div>
                         <a href="/print-scan/agents/download-script" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5 font-semibold text-slate-800 hover:bg-slate-100">
-                            <Download class="h-3.5 w-3.5" /> Download `sentinel-local-agent.py`
+                            <Download class="h-3.5 w-3.5" /> Download `betterdoc-local-agent.py`
                         </a>
                     </div>
                     <form @submit.prevent="submitAgentPairInit" class="flex flex-wrap items-center gap-2">

@@ -17,7 +17,7 @@ abstract class TestCase extends BaseTestCase
 
     /**
      * Run DDL migrations using the elevated admin connection so runtime queries
-     * continue executing as least-privilege `sentinel_app` (NOBYPASSRLS).
+     * continue executing as least-privilege `betterdoc_app` (NOBYPASSRLS).
      *
      * @return array<string, string>
      */
@@ -44,14 +44,14 @@ abstract class TestCase extends BaseTestCase
             'user_id' => $user->id,
             'session_id' => $session->getId(),
             'ip_address' => $ip,
-            'user_agent_hash' => hash('sha256', 'SentinelPestAgent/1.0'),
+            'user_agent_hash' => hash('sha256', 'BetterDocPestAgent/1.0'),
             'device_label' => 'Pest Workstation',
             'mfa_verified_at' => $mfaTime,
             'last_seen_at' => now(),
         ]);
 
         return $this->withCredentials()
-            ->withHeaders(['User-Agent' => 'SentinelPestAgent/1.0'])
+            ->withHeaders(['User-Agent' => 'BetterDocPestAgent/1.0'])
             ->withCookie($session->getName(), $session->getId())
             ->withServerVariables(['REMOTE_ADDR' => $ip])
             ->actingAs($user);

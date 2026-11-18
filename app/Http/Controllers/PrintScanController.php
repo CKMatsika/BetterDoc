@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\BetterDocRole;
 use App\Enums\LocalAgentStatus;
 use App\Enums\PrinterDriver;
 use App\Enums\ScanSourceType;
-use App\Enums\SentinelRole;
 use App\Exceptions\PrintPolicyViolationException;
 use App\Models\Cabinet;
 use App\Models\ClearanceLevel;
@@ -52,9 +52,9 @@ class PrintScanController extends Controller
         /** @var User $user */
         $user = $request->user();
         $isOperator = $user->hasAnyRole([
-            SentinelRole::SystemAdmin->value,
-            SentinelRole::RecordsOfficer->value,
-            SentinelRole::Auditor->value,
+            BetterDocRole::SystemAdmin->value,
+            BetterDocRole::RecordsOfficer->value,
+            BetterDocRole::Auditor->value,
         ]);
 
         $printers = Printer::query()
@@ -212,7 +212,7 @@ class PrintScanController extends Controller
             'allowedClearances' => $allowedClearances,
             'clearedDocuments' => $clearedDocuments,
             'userRfidBadge' => $user->rfid_badge_uid,
-            'canManageDevices' => $user->hasAnyRole([SentinelRole::SystemAdmin->value, SentinelRole::RecordsOfficer->value]),
+            'canManageDevices' => $user->hasAnyRole([BetterDocRole::SystemAdmin->value, BetterDocRole::RecordsOfficer->value]),
         ]);
     }
 
@@ -220,7 +220,7 @@ class PrintScanController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        abort_unless($user->hasAnyRole([SentinelRole::SystemAdmin->value, SentinelRole::RecordsOfficer->value]), 403);
+        abort_unless($user->hasAnyRole([BetterDocRole::SystemAdmin->value, BetterDocRole::RecordsOfficer->value]), 403);
 
         /** @var array{name: string, location?: string|null, cups_queue_name: string, ipps_uri: string, driver: string, max_classification_rank: int, supports_secure_release?: bool} $validated */
         $validated = $request->validate([
@@ -253,7 +253,7 @@ class PrintScanController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        abort_unless($user->hasAnyRole([SentinelRole::SystemAdmin->value, SentinelRole::RecordsOfficer->value]), 403);
+        abort_unless($user->hasAnyRole([BetterDocRole::SystemAdmin->value, BetterDocRole::RecordsOfficer->value]), 403);
 
         return response()->json(['discovered' => $this->printerService->discoverLanPrinters()]);
     }
@@ -262,7 +262,7 @@ class PrintScanController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        abort_unless($user->hasAnyRole([SentinelRole::SystemAdmin->value, SentinelRole::RecordsOfficer->value]), 403);
+        abort_unless($user->hasAnyRole([BetterDocRole::SystemAdmin->value, BetterDocRole::RecordsOfficer->value]), 403);
 
         /** @var array{code: string, name: string, monthly_page_quota: int} $validated */
         $validated = $request->validate([
@@ -343,7 +343,7 @@ class PrintScanController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        $isOperator = $user->hasAnyRole([SentinelRole::SystemAdmin->value, SentinelRole::RecordsOfficer->value]);
+        $isOperator = $user->hasAnyRole([BetterDocRole::SystemAdmin->value, BetterDocRole::RecordsOfficer->value]);
         abort_unless($printJob->user_id === $user->id || $isOperator, 403);
 
         /** @var array{pin: string} $validated */
@@ -427,7 +427,7 @@ class PrintScanController extends Controller
 
         return response($pdfBytes, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="sentinel-separator-'.$docType.'.pdf"',
+            'Content-Disposition' => 'attachment; filename="betterdoc-separator-'.$docType.'.pdf"',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }
@@ -495,7 +495,7 @@ class PrintScanController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        abort_unless($user->hasAnyRole([SentinelRole::SystemAdmin->value, SentinelRole::RecordsOfficer->value]), 403);
+        abort_unless($user->hasAnyRole([BetterDocRole::SystemAdmin->value, BetterDocRole::RecordsOfficer->value]), 403);
 
         /** @var array{name: string, source_type: string, endpoint_or_path: string, target_cabinet_id?: string|null, default_classification_level_id?: string|null, auto_split_barcode?: bool, auto_deskew?: bool} $validated */
         $validated = $request->validate([
@@ -583,7 +583,7 @@ class PrintScanController extends Controller
 
         return response($script, 200, [
             'Content-Type' => 'text/x-python',
-            'Content-Disposition' => 'attachment; filename="sentinel-local-agent.py"',
+            'Content-Disposition' => 'attachment; filename="betterdoc-local-agent.py"',
         ]);
     }
 
@@ -618,7 +618,7 @@ class PrintScanController extends Controller
 
     public function ingestAgentScan(Request $request): JsonResponse
     {
-        $rawToken = $request->header('X-Sentinel-Agent-Token') ?: ($request->bearerToken() ?? '');
+        $rawToken = $request->header('X-BetterDoc-Agent-Token') ?: ($request->bearerToken() ?? '');
         $auth = $this->localAgentService->authenticateBearerToken($rawToken);
         if ($auth === null) {
             return response()->json(['message' => 'Unauthorized local agent token.'], 401);

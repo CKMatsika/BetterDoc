@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from app import pki_engine, print_scan_engine, redaction_engine, signing_engine
 
-app = FastAPI(title="SENTINEL PAdES & PKCS#11 Signer")
+app = FastAPI(title="BetterDoc PAdES & PKCS#11 Signer")
 
 
 class SignPadesBody(BaseModel):
@@ -41,7 +41,7 @@ class VerifyPdfBody(BaseModel):
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": "sentinel-signer"}
+    return {"status": "ok", "service": "betterdoc-signer"}
 
 
 @app.post("/sign/pades")

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Pki;
 
-use App\Services\Security\SentinelHttpClientGuard;
+use App\Services\Security\BetterDocHttpClientGuard;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
 use Psr\Http\Message\RequestInterface;
@@ -13,7 +13,7 @@ use RuntimeException;
 class SignerBridgeService
 {
     public function __construct(
-        private readonly SentinelHttpClientGuard $guard,
+        private readonly BetterDocHttpClientGuard $guard,
     ) {}
 
     /**
@@ -22,23 +22,23 @@ class SignerBridgeService
      */
     public function execute(string $action, array $payload): array
     {
-        $driver = config()->string('sentinel.pki.signer_driver', 'local_pyhanko');
+        $driver = config()->string('betterdoc.pki.signer_driver', 'local_pyhanko');
 
         if ($driver === 'http') {
-            $baseUrl = rtrim(config()->string('sentinel.pki.signer_url', 'http://sentinel-signer:8003'), '/');
+            $baseUrl = rtrim(config()->string('betterdoc.pki.signer_url', 'http://betterdoc-signer:8003'), '/');
             if ($action === 'sign_pades') {
                 $response = Http::withRequestMiddleware(
                     fn (RequestInterface $req): RequestInterface => $this->guard->assertOutboundAllowed($req)
                 )->timeout(60)->post("{$baseUrl}/sign/pades", $payload);
 
                 if (! $response->successful()) {
-                    throw new RuntimeException('sentinel-signer HTTP error: '.$response->body());
+                    throw new RuntimeException('betterdoc-signer HTTP error: '.$response->body());
                 }
 
                 /** @var mixed $decoded */
                 $decoded = $response->json();
                 if (! is_array($decoded)) {
-                    throw new RuntimeException('sentinel-signer HTTP response was not a JSON object.');
+                    throw new RuntimeException('betterdoc-signer HTTP response was not a JSON object.');
                 }
 
                 /** @var array<string, mixed> $typedHttp */
@@ -48,10 +48,10 @@ class SignerBridgeService
             }
         }
 
-        $pythonBin = config()->string('sentinel.pki.python_bin', 'python');
-        $signerDir = base_path('services/sentinel-signer');
+        $pythonBin = config()->string('betterdoc.pki.python_bin', 'python');
+        $signerDir = base_path('services/betterdoc-signer');
 
-        $payloadFile = tempnam(sys_get_temp_dir(), 'sentinel_sig_in_');
+        $payloadFile = tempnam(sys_get_temp_dir(), 'betterdoc_sig_in_');
         if ($payloadFile === false) {
             throw new RuntimeException('Unable to allocate signer IPC payload file.');
         }

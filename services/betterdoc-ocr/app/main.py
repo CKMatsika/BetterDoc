@@ -5,7 +5,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, Response
 import fitz
 
-app = FastAPI(title="SENTINEL OCR & CDR Service", version="1.0.0")
+app = FastAPI(title="BetterDoc OCR & CDR Service", version="1.0.0")
 
 
 @app.get("/health")

@@ -38,12 +38,12 @@ const isValid = props.verification.overall_status === 'valid';
 </script>
 
 <template>
-    <Head title="SENTINEL Cryptographic Seal Verification" />
+    <Head title="BetterDoc Cryptographic Seal Verification" />
     <div class="min-h-screen bg-slate-950 px-4 py-10 text-slate-100">
         <div class="mx-auto max-w-3xl space-y-6">
             <div class="flex items-center justify-between border-b border-slate-800 pb-4">
                 <div>
-                    <p class="font-mono text-xs uppercase tracking-widest text-sky-400">SENTINEL DMS OFFLINE VERIFIER</p>
+                    <p class="font-mono text-xs uppercase tracking-widest text-sky-400">BetterDoc DMS OFFLINE VERIFIER</p>
                     <h1 class="mt-1 text-2xl font-bold text-white">{{ document.doc_number }} — {{ document.title }}</h1>
                 </div>
                 <Link href="/login" class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-800">

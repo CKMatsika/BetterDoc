@@ -234,8 +234,8 @@ it('supports Tier 1 drawn SVG stamp, Tier 2B Smartcard external PKCS#11 digest f
         'email' => $sqnLdr->email,
         'org_name' => $tenant->name,
         'org_unit' => 'SIG-SQN',
-        'ocsp_url' => 'https://sentinel.lan/ocsp',
-        'crl_url' => 'https://sentinel.lan/crl',
+        'ocsp_url' => 'https://betterdoc.lan/ocsp',
+        'crl_url' => 'https://betterdoc.lan/crl',
         'valid_days' => 365,
     ]);
     sodium_memzero($interKey);

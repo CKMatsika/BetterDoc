@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 
 class VerifyAuditChainCommand extends Command
 {
-    protected $signature = 'sentinel:audit:verify {--tenant= : Optional tenant slug to verify}';
+    protected $signature = 'betterdoc:audit:verify {--tenant= : Optional tenant slug to verify}';
 
     protected $description = 'Verify SHA-256 cryptographic hash-chain integrity of the immutable audit ledger.';
 

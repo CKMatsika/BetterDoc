@@ -24,7 +24,7 @@ class EnvelopeEncryptionService
     public function encryptFileToDisk(string $sourcePath, string $diskName, string $storageKey): array
     {
         $dek = random_bytes(SODIUM_CRYPTO_SECRETSTREAM_XCHACHA20POLY1305_KEYBYTES);
-        $kekKeyId = config()->string('sentinel.security.hsm_master_key_id', 'sentinel-kek-v1');
+        $kekKeyId = config()->string('betterdoc.security.hsm_master_key_id', 'betterdoc-kek-v1');
         $wrappedDek = $this->wrapDek($dek, $kekKeyId);
 
         $in = fopen($sourcePath, 'rb');
@@ -216,7 +216,7 @@ class EnvelopeEncryptionService
 
     private function deriveMasterKek(string $kekKeyId): string
     {
-        $explicitB64 = config()->string('sentinel.security.master_kek_b64', '');
+        $explicitB64 = config()->string('betterdoc.security.master_kek_b64', '');
         if ($explicitB64 !== '') {
             $decoded = base64_decode($explicitB64, true);
             if ($decoded !== false && strlen($decoded) === SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES) {
@@ -229,7 +229,7 @@ class EnvelopeEncryptionService
             $appKey = base64_decode(substr($appKey, 7), true) ?: $appKey;
         }
 
-        return hash_hkdf('sha256', $appKey, SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES, 'sentinel-kek|'.$kekKeyId);
+        return hash_hkdf('sha256', $appKey, SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES, 'betterdoc-kek|'.$kekKeyId);
     }
 
     /**

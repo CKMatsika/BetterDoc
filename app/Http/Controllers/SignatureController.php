@@ -106,7 +106,7 @@ class SignatureController extends Controller
             actor: $user,
             session: $session,
             reason: $validated['reason'],
-            location: $validated['location'] ?? 'SENTINEL LAN',
+            location: $validated['location'] ?? 'BetterDoc LAN',
             overrideTier: $overrideTier,
             typedName: $validated['typed_name'] ?? null,
             drawnSvgPath: $validated['drawn_stamp_svg'] ?? null,
@@ -279,7 +279,7 @@ class SignatureController extends Controller
             abort(404);
         }
 
-        $row = DB::selectOne('SELECT sentinel_verify_token_lookup(?) AS payload', [$cleanToken]);
+        $row = DB::selectOne('SELECT betterdoc_verify_token_lookup(?) AS payload', [$cleanToken]);
         $rawPayload = is_object($row) ? ($row->payload ?? null) : null;
         if (! is_string($rawPayload) || $rawPayload === '') {
             abort(404);

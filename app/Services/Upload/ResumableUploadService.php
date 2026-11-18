@@ -45,15 +45,15 @@ class ResumableUploadService
         ?string $documentId = null,
         ?int $chunkSize = null,
     ): UploadSession {
-        $maxSize = config()->integer('sentinel.upload.max_size_bytes', 2147483648);
+        $maxSize = config()->integer('betterdoc.upload.max_size_bytes', 2147483648);
         if ($totalSize <= 0 || $totalSize > $maxSize) {
             throw new RuntimeException('File size exceeds allowed bounds.');
         }
 
-        $effectiveChunkSize = $chunkSize ?? config()->integer('sentinel.upload.chunk_size_bytes', 5242880);
+        $effectiveChunkSize = $chunkSize ?? config()->integer('betterdoc.upload.chunk_size_bytes', 5242880);
         $effectiveChunkSize = max(65536, $effectiveChunkSize);
         $totalChunks = (int) ceil($totalSize / $effectiveChunkSize);
-        $ttlHours = config()->integer('sentinel.upload.session_ttl_hours', 48);
+        $ttlHours = config()->integer('betterdoc.upload.session_ttl_hours', 48);
         $sessionUuid = (string) Str::uuid7();
 
         return UploadSession::query()->create([
@@ -94,7 +94,7 @@ class ResumableUploadService
         }
 
         $partPath = "{$session->storage_temp_prefix}/part_{$partIndex}";
-        Storage::disk('sentinel_quarantine')->put($partPath, $bytes);
+        Storage::disk('betterdoc_quarantine')->put($partPath, $bytes);
 
         return DB::transaction(function () use ($session, $partIndex, $bytes, $actualSha): UploadSession {
             /** @var UploadSession $locked */
@@ -146,7 +146,7 @@ class ResumableUploadService
             $totalBytes = 0;
 
             for ($i = 0; $i < $session->total_chunks; $i++) {
-                $partStream = Storage::disk('sentinel_quarantine')->readStream("{$session->storage_temp_prefix}/part_{$i}");
+                $partStream = Storage::disk('betterdoc_quarantine')->readStream("{$session->storage_temp_prefix}/part_{$i}");
                 if ($partStream === null) {
                     fclose($out);
                     throw new RuntimeException("Missing chunk {$i} in quarantine staging.");
@@ -209,7 +209,7 @@ class ResumableUploadService
 
             // Clean staging quarantine chunks
             for ($i = 0; $i < $session->total_chunks; $i++) {
-                Storage::disk('sentinel_quarantine')->delete("{$session->storage_temp_prefix}/part_{$i}");
+                Storage::disk('betterdoc_quarantine')->delete("{$session->storage_temp_prefix}/part_{$i}");
             }
 
             return $version;
@@ -297,7 +297,7 @@ class ResumableUploadService
             $finalSha = hash_file('sha256', $workingPath) ?: $fallbackSha;
             $finalSize = filesize($workingPath) ?: $fallbackSize;
 
-            $enc = $this->crypto->encryptFileToDisk($workingPath, 'sentinel_vault', $storageKey);
+            $enc = $this->crypto->encryptFileToDisk($workingPath, 'betterdoc_vault', $storageKey);
 
             $version = DB::transaction(function () use (
                 $versionUuid,
@@ -329,7 +329,7 @@ class ResumableUploadService
                     'version_major' => $nextMajor,
                     'version_minor' => $nextMinor,
                     'is_current' => true,
-                    'storage_disk' => 'sentinel_vault',
+                    'storage_disk' => 'betterdoc_vault',
                     'storage_key' => $storageKey,
                     'original_filename' => $filename,
                     'mime_type' => $ocrResult['mime_type'],

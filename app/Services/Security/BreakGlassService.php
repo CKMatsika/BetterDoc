@@ -31,7 +31,7 @@ class BreakGlassService
             throw new TwoPersonViolationException('Break-glass emergency justification must be at least 30 characters.');
         }
 
-        $maxHours = config()->integer('sentinel.security.break_glass_max_hours', 4);
+        $maxHours = config()->integer('betterdoc.security.break_glass_max_hours', 4);
         $hours = max(1, min($durationHours, $maxHours));
 
         $session = BreakGlassSession::query()->create([
@@ -113,7 +113,7 @@ class BreakGlassService
             throw new TwoPersonViolationException('Second break-glass approver must be distinct from the first approver.');
         }
 
-        $maxHours = config()->integer('sentinel.security.break_glass_max_hours', 4);
+        $maxHours = config()->integer('betterdoc.security.break_glass_max_hours', 4);
         $hours = max(1, min($durationHours, $maxHours));
 
         $bgSession->update([
@@ -182,7 +182,7 @@ class BreakGlassService
             throw new TwoPersonViolationException('Requester cannot approve their own break-glass request.');
         }
 
-        $ttl = config()->integer('sentinel.security.step_up_mfa_ttl_minutes', 5);
+        $ttl = config()->integer('betterdoc.security.step_up_mfa_ttl_minutes', 5);
         if ($approver->mfa_enforced && ($userSession === null || ! $userSession->isMfaFresh($ttl))) {
             throw new TwoPersonViolationException('Fresh MFA step-up verification is required for break-glass approval.');
         }

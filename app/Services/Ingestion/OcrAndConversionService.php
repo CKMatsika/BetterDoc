@@ -22,7 +22,7 @@ class OcrAndConversionService
         $resultingMime = $mimeType;
 
         if ($ext !== 'pdf' && $mimeType !== 'application/pdf') {
-            if (config()->boolean('sentinel.gotenberg.enabled', false)) {
+            if (config()->boolean('betterdoc.gotenberg.enabled', false)) {
                 $converted = $this->convertViaGotenberg($sourcePath, $filename);
                 if ($converted !== null) {
                     $workingPdf = $converted;
@@ -44,7 +44,7 @@ class OcrAndConversionService
             }
         }
 
-        if ($resultingMime === 'application/pdf' && config()->boolean('sentinel.ocr.enabled', false)) {
+        if ($resultingMime === 'application/pdf' && config()->boolean('betterdoc.ocr.enabled', false)) {
             $ocrResult = $this->runRemoteOcr($workingPdf);
             if ($ocrResult !== null) {
                 return [
@@ -106,7 +106,7 @@ class OcrAndConversionService
 
     private function convertViaGotenberg(string $sourcePath, string $filename): ?string
     {
-        $url = rtrim(config()->string('sentinel.gotenberg.url', 'http://gotenberg:3000'), '/').'/forms/libreoffice/convert';
+        $url = rtrim(config()->string('betterdoc.gotenberg.url', 'http://gotenberg:3000'), '/').'/forms/libreoffice/convert';
         $bytes = file_get_contents($sourcePath);
         if ($bytes === false) {
             return null;
@@ -134,7 +134,7 @@ class OcrAndConversionService
      */
     private function runRemoteOcr(string $pdfPath): ?array
     {
-        $url = rtrim(config()->string('sentinel.ocr.url', 'http://sentinel-ocr:8002'), '/').'/ocr-pdfa';
+        $url = rtrim(config()->string('betterdoc.ocr.url', 'http://betterdoc-ocr:8002'), '/').'/ocr-pdfa';
         $bytes = file_get_contents($pdfPath);
         if ($bytes === false) {
             return null;
@@ -143,7 +143,7 @@ class OcrAndConversionService
         $response = Http::timeout(120)
             ->attach('file', $bytes, 'document.pdf')
             ->post($url, [
-                'languages' => config()->string('sentinel.ocr.languages', 'eng'),
+                'languages' => config()->string('betterdoc.ocr.languages', 'eng'),
             ]);
 
         if (! $response->successful()) {

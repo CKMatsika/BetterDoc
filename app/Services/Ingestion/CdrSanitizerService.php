@@ -11,14 +11,14 @@ class CdrSanitizerService
 {
     /**
      * Sanitize active threats (/JavaScript, /JS, /OpenAction, /AA, /Launch, /SubmitForm) from PDFs.
-     * Uses sentinel-ocr (PyMuPDF + qpdf) when enabled, or length-preserving PDF dictionary neutralization locally.
+     * Uses betterdoc-ocr (PyMuPDF + qpdf) when enabled, or length-preserving PDF dictionary neutralization locally.
      *
      * @return array{status: CdrStatus, stripped_vectors: list<string>}
      */
     public function sanitizePdfInPlace(string $pdfPath): array
     {
-        if (config()->boolean('sentinel.ocr.enabled', false)) {
-            $url = rtrim(config()->string('sentinel.ocr.url', 'http://sentinel-ocr:8002'), '/').'/cdr-sanitize';
+        if (config()->boolean('betterdoc.ocr.enabled', false)) {
+            $url = rtrim(config()->string('betterdoc.ocr.url', 'http://betterdoc-ocr:8002'), '/').'/cdr-sanitize';
             $bytes = file_get_contents($pdfPath);
             if ($bytes !== false) {
                 $response = Http::timeout(30)
@@ -43,10 +43,10 @@ class CdrSanitizerService
 
         // Equal-byte-length safe key replacements preserve exact PDF xref table byte offsets
         $replacements = [
-            '/JavaScript' => '/SentinelJS',
-            '/OpenAction' => '/SentinelOA',
-            '/SubmitForm' => '/SentinelSF',
-            '/RichMedia' => '/SentinelRM',
+            '/JavaScript' => '/BetterDocJS',
+            '/OpenAction' => '/BetterDocOA',
+            '/SubmitForm' => '/BetterDocSF',
+            '/RichMedia' => '/BetterDocRM',
             '/Launch' => '/SentLN',
             '/GoToR' => '/SentGR',
             '/JS' => '/S0',

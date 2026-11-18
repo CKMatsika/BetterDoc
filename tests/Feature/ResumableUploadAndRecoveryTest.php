@@ -97,10 +97,10 @@ it('resumes interrupted chunked upload, verifies SHA-256, and stores envelope-en
 
         expect($ver->sha256_hash)->toBe($expectedSha)
             ->and($doc->ocr_text)->toContain('Telemetry')
-            ->and(Storage::disk('sentinel_vault')->exists($ver->storage_key))->toBeTrue();
+            ->and(Storage::disk('betterdoc_vault')->exists($ver->storage_key))->toBeTrue();
 
         // Storage disk contains encrypted ciphertext, NEVER plaintext PDF bytes
-        $rawCipher = Storage::disk('sentinel_vault')->get($ver->storage_key);
+        $rawCipher = Storage::disk('betterdoc_vault')->get($ver->storage_key);
         expect($rawCipher)->not->toContain('%PDF-')
             ->and($rawCipher)->not->toContain('Telemetry');
     });
@@ -132,11 +132,11 @@ it('streams multi-megabyte files via EnvelopeEncryptionService with zero corrupt
     file_put_contents($src, $payload);
 
     $key = 'test/stream_roundtrip.enc';
-    $meta = $crypto->encryptFileToDisk($src, 'sentinel_vault', $key);
+    $meta = $crypto->encryptFileToDisk($src, 'betterdoc_vault', $key);
     @unlink($src);
 
     $version = new DocumentVersion([
-        'storage_disk' => 'sentinel_vault',
+        'storage_disk' => 'betterdoc_vault',
         'storage_key' => $key,
         'wrapped_dek' => $meta['wrapped_dek'],
         'kek_key_id' => $meta['kek_key_id'],
@@ -145,7 +145,7 @@ it('streams multi-megabyte files via EnvelopeEncryptionService with zero corrupt
     $handle = $crypto->decryptVersionToTempHandle($version);
     $decrypted = stream_get_contents($handle);
     fclose($handle);
-    Storage::disk('sentinel_vault')->delete($key);
+    Storage::disk('betterdoc_vault')->delete($key);
 
     expect($decrypted)->toBe($payload);
 });

@@ -1,6 +1,6 @@
 {
-  "name": "SENTINEL DMS",
-  "short_name": "SENTINEL",
+  "name": "BetterDoc DMS",
+  "short_name": "BetterDoc",
   "description": "Offline-First Classified Document Management & Workflow Platform",
   "start_url": "/dashboard",
   "display": "standalone",
@@ -8,7 +8,7 @@
   "theme_color": "#0F172A",
   "icons": [
     {
-      "src": "/sentinel-icon.svg",
+      "src": "/betterdoc-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Workflow;
 
-use App\Enums\SentinelRole;
+use App\Enums\BetterDocRole;
 use App\Enums\WorkflowInstanceStatus;
 use App\Enums\WorkflowTaskStatus;
 use App\Exceptions\InsufficientClearanceException;
@@ -627,7 +627,7 @@ class WorkflowEngineService
 
         $roleName = is_string($node['assignee_role'] ?? null) && $node['assignee_role'] !== ''
             ? $node['assignee_role']
-            : SentinelRole::Approver->value;
+            : BetterDocRole::Approver->value;
 
         app(PermissionRegistrar::class)->setPermissionsTeamId($document->tenant_id);
 
@@ -655,7 +655,7 @@ class WorkflowEngineService
             ->where('tenant_id', $document->tenant_id)
             ->where('id', '!=', $task->assignee_id)
             ->where('clearance_rank', '>=', $document->classification_rank)
-            ->whereHas('roles', static fn ($q) => $q->whereIn('name', [SentinelRole::Approver->value, SentinelRole::RecordsOfficer->value]))
+            ->whereHas('roles', static fn ($q) => $q->whereIn('name', [BetterDocRole::Approver->value, BetterDocRole::RecordsOfficer->value]))
             ->orderByDesc('clearance_rank')
             ->get();
 

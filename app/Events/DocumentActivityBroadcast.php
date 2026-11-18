@@ -37,7 +37,7 @@ class DocumentActivityBroadcast implements ShouldBroadcastNow
 
     public function broadcastAs(): string
     {
-        return 'sentinel.document.activity';
+        return 'betterdoc.document.activity';
     }
 
     /**

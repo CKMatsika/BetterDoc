@@ -16,9 +16,9 @@ use App\Models\User;
 use App\Services\Audit\ImmutableAuditLogger;
 use App\Services\Collaboration\RealtimeNotificationService;
 use App\Services\Crypto\EnvelopeEncryptionService;
+use App\Services\Security\BetterDocHttpClientGuard;
 use App\Services\Security\ClearancePolicyEngine;
 use App\Services\Security\DbSecurityContext;
-use App\Services\Security\SentinelHttpClientGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -39,7 +39,7 @@ class PrintService
         private readonly ImmutableAuditLogger $audit,
         private readonly RealtimeNotificationService $notifications,
         private readonly DbSecurityContext $dbContext,
-        private readonly SentinelHttpClientGuard $guard,
+        private readonly BetterDocHttpClientGuard $guard,
     ) {}
 
     /**
@@ -148,7 +148,7 @@ class PrintService
 
         try {
             file_put_contents($tempPath, $spoolBytes);
-            $enc = $this->crypto->encryptFileToDisk($tempPath, 'sentinel_vault', $spoolKey);
+            $enc = $this->crypto->encryptFileToDisk($tempPath, 'betterdoc_vault', $spoolKey);
         } finally {
             @unlink($tempPath);
         }
@@ -173,14 +173,14 @@ class PrintService
             'release_pin_hash' => $pinHash,
             'rfid_badge_uid' => $user->rfid_badge_uid,
             'pin_attempts' => 0,
-            'watermarked_storage_disk' => 'sentinel_vault',
+            'watermarked_storage_disk' => 'betterdoc_vault',
             'watermarked_storage_key' => $spoolKey,
             'watermarked_wrapped_dek' => $enc['wrapped_dek'],
             'watermarked_kek_key_id' => $enc['kek_key_id'],
             'watermark_stamp_text' => $stampText,
             'classification_rank' => $document->classification_rank,
             'held_at' => now(),
-            'expires_at' => now()->addHours(max(1, config()->integer('sentinel.print_scan.pin_ttl_hours', 24))),
+            'expires_at' => now()->addHours(max(1, config()->integer('betterdoc.print_scan.pin_ttl_hours', 24))),
         ]);
         $job->id = $jobId;
         $job->save();
@@ -221,7 +221,7 @@ class PrintService
         User $operator,
         ?Request $request = null,
     ): PrintJob {
-        $maxAttempts = max(1, config()->integer('sentinel.print_scan.max_pin_attempts', 3));
+        $maxAttempts = max(1, config()->integer('betterdoc.print_scan.max_pin_attempts', 3));
 
         $errorToThrow = null;
 
@@ -365,13 +365,13 @@ class PrintService
     }
 
     /**
-     * Discover LAN CUPS / IPPS printers cleanly under SentinelHttpClientGuard.
+     * Discover LAN CUPS / IPPS printers cleanly under BetterDocHttpClientGuard.
      *
      * @return list<array{name: string, cups_queue_name: string, ipps_uri: string, driver: string}>
      */
     public function discoverLanPrinters(): array
     {
-        $cupsUrl = rtrim(config()->string('sentinel.print_scan.cups_url', 'http://cups:631'), '/');
+        $cupsUrl = rtrim(config()->string('betterdoc.print_scan.cups_url', 'http://cups:631'), '/');
 
         try {
             $resp = Http::withRequestMiddleware(
@@ -400,9 +400,9 @@ class PrintService
 
         return [
             [
-                'name' => 'SENTINEL LAN IPPS MFP (Discovered Offline Queue)',
-                'cups_queue_name' => 'sentinel-lan-mfp-'.substr(md5((string) now()->timestamp), 0, 4),
-                'ipps_uri' => "{$cupsUrl}/printers/sentinel-lan-mfp",
+                'name' => 'BetterDoc LAN IPPS MFP (Discovered Offline Queue)',
+                'cups_queue_name' => 'betterdoc-lan-mfp-'.substr(md5((string) now()->timestamp), 0, 4),
+                'ipps_uri' => "{$cupsUrl}/printers/betterdoc-lan-mfp",
                 'driver' => PrinterDriver::CupsIpps->value,
             ],
         ];
@@ -481,7 +481,7 @@ class PrintService
         }
 
         $driver = $printer->driver->value;
-        if ($driver === PrinterDriver::CupsIpps->value && config()->string('sentinel.print_scan.print_driver', 'local_spool') === 'cups_ipps') {
+        if ($driver === PrinterDriver::CupsIpps->value && config()->string('betterdoc.print_scan.print_driver', 'local_spool') === 'cups_ipps') {
             try {
                 $spoolBytes = $this->readWatermarkedSpoolBytes($job);
                 $resp = Http::withRequestMiddleware(

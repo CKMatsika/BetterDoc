@@ -59,7 +59,7 @@ class WopiService
         $canWrite = $editDecision->allowed && ! $document->is_worm;
         $rawToken = bin2hex(random_bytes(32));
         $tokenHash = hash('sha256', $rawToken);
-        $ttlMinutes = max(10, config()->integer('sentinel.collabora.token_ttl_minutes', 120));
+        $ttlMinutes = max(10, config()->integer('betterdoc.collabora.token_ttl_minutes', 120));
         $expiresAt = now()->addMinutes($ttlMinutes);
 
         WopiToken::query()->create([
@@ -84,10 +84,10 @@ class WopiService
             request: $request,
         );
 
-        $wopiBase = rtrim(config()->string('sentinel.collabora.wopi_base_url', 'http://127.0.0.1:8000'), '/');
+        $wopiBase = rtrim(config()->string('betterdoc.collabora.wopi_base_url', 'http://127.0.0.1:8000'), '/');
         $wopiSrc = "{$wopiBase}/wopi/files/{$document->id}";
-        $collaboraEnabled = config()->boolean('sentinel.collabora.enabled', false);
-        $collaboraBase = rtrim(config()->string('sentinel.collabora.url', 'http://collabora:9980'), '/');
+        $collaboraEnabled = config()->boolean('betterdoc.collabora.enabled', false);
+        $collaboraBase = rtrim(config()->string('betterdoc.collabora.url', 'http://collabora:9980'), '/');
 
         return [
             'access_token' => $rawToken,
@@ -120,7 +120,7 @@ class WopiService
 
         $tokenData = null;
         if ($driver === 'pgsql') {
-            $res = DB::selectOne('SELECT sentinel_wopi_token_lookup(?) AS data', [$tokenHash]);
+            $res = DB::selectOne('SELECT betterdoc_wopi_token_lookup(?) AS data', [$tokenHash]);
             if (is_object($res) && property_exists($res, 'data') && is_string($res->data)) {
                 /** @var mixed $decoded */
                 $decoded = json_decode($res->data, true);
@@ -144,7 +144,7 @@ class WopiService
             throw new AuthenticationException('WOPI session has expired.');
         }
 
-        if (config()->boolean('sentinel.collabora.bind_client_ip', false) && $request !== null) {
+        if (config()->boolean('betterdoc.collabora.bind_client_ip', false) && $request !== null) {
             $boundIp = is_string($tokenData['ip_address'] ?? null) ? $tokenData['ip_address'] : null;
             if ($boundIp !== null && $boundIp !== $request->ip()) {
                 throw new AuthenticationException('WOPI IP binding mismatch.');
@@ -195,7 +195,7 @@ class WopiService
     }
 
     /**
-     * Build standard WOPI CheckFileInfo JSON payload with SENTINEL MAC/Watermark controls.
+     * Build standard WOPI CheckFileInfo JSON payload with BetterDoc MAC/Watermark controls.
      *
      * @return array<string, mixed>
      */
@@ -364,7 +364,7 @@ class WopiService
 
             $newId = (string) Str::uuid7();
             $storageKey = "tenants/{$document->tenant_id}/docs/{$document->id}/v{$major}_{$nextMinor}_{$newId}.enc";
-            $enc = $this->crypto->encryptFileToDisk($tmpPath, 'sentinel_vault', $storageKey);
+            $enc = $this->crypto->encryptFileToDisk($tmpPath, 'betterdoc_vault', $storageKey);
             $sha256 = hash('sha256', $rawBytes);
 
             $version = DB::transaction(function () use ($newId, $document, $current, $major, $nextMinor, $storageKey, $rawBytes, $sha256, $enc, $user, $request): DocumentVersion {
@@ -379,7 +379,7 @@ class WopiService
                     'version_major' => $major,
                     'version_minor' => $nextMinor,
                     'is_current' => true,
-                    'storage_disk' => 'sentinel_vault',
+                    'storage_disk' => 'betterdoc_vault',
                     'storage_key' => $storageKey,
                     'original_filename' => $current->original_filename ?? ($document->doc_number.'.docx'),
                     'mime_type' => $current->mime_type ?? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

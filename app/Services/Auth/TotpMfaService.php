@@ -26,7 +26,7 @@ class TotpMfaService
 
     public function provisionSvgQrCode(User $user, string $secret): string
     {
-        $issuer = config()->string('app.name', 'SENTINEL DMS');
+        $issuer = config()->string('app.name', 'BetterDoc DMS');
         $otpAuthUrl = $this->google2fa->getQRCodeUrl($issuer, $user->email, $secret);
 
         $renderer = new ImageRenderer(

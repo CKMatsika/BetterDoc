@@ -1,4 +1,4 @@
-"""SENTINEL Local PKI Microservice: RFC 3161 Time-Stamp Authority, CRL & OCSP Responder."""
+"""BetterDoc Local PKI Microservice: RFC 3161 Time-Stamp Authority, CRL & OCSP Responder."""
 
 from __future__ import annotations
 
@@ -15,9 +15,9 @@ from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel
 
-app = FastAPI(title="SENTINEL Internal PKI (TSA / OCSP / CRL)")
+app = FastAPI(title="BetterDoc Internal PKI (TSA / OCSP / CRL)")
 
-PKI_STATE_DIR = Path(os.getenv("SENTINEL_PKI_STATE_DIR", "/var/lib/sentinel-pki"))
+PKI_STATE_DIR = Path(os.getenv("BETTERDOC_PKI_STATE_DIR", "/var/lib/betterdoc-pki"))
 
 
 class OcspCheckRequest(BaseModel):
@@ -30,7 +30,7 @@ class OcspCheckRequest(BaseModel):
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": "sentinel-pki"}
+    return {"status": "ok", "service": "betterdoc-pki"}
 
 
 @app.post("/tsa")
@@ -40,8 +40,8 @@ async def rfc3161_timestamp(request: Request) -> Response:
     if not raw:
         raise HTTPException(status_code=400, detail="Empty RFC 3161 TimeStampReq")
 
-    cert_path = Path(os.getenv("SENTINEL_TSA_CERT", str(PKI_STATE_DIR / "tsa.crt")))
-    key_path = Path(os.getenv("SENTINEL_TSA_KEY", str(PKI_STATE_DIR / "tsa.key")))
+    cert_path = Path(os.getenv("BETTERDOC_TSA_CERT", str(PKI_STATE_DIR / "tsa.crt")))
+    key_path = Path(os.getenv("BETTERDOC_TSA_KEY", str(PKI_STATE_DIR / "tsa.key")))
     if not cert_path.exists() or not key_path.exists():
         raise HTTPException(status_code=503, detail="TSA keypair not configured on PKI node")
 

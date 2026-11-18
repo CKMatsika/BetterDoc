@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Shield, Highlighter, MessageSquarePlus, Eraser, MousePointer } from '@lucide/vue';
-import type { DocumentAnnotationItem } from '@/types/sentinel';
+import type { DocumentAnnotationItem } from '@/types/betterdoc';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 

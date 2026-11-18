@@ -11,7 +11,7 @@ use Illuminate\Console\Command;
 
 class ApplyProfileCommand extends Command
 {
-    protected $signature = 'sentinel:profile:apply {tenantSlug : Tenant slug} {profileCode : defence|financial|corporate}';
+    protected $signature = 'betterdoc:profile:apply {tenantSlug : Tenant slug} {profileCode : defence|financial|corporate}';
 
     protected $description = 'Apply an organization configuration profile pack to a tenant.';
 

@@ -23,7 +23,7 @@ return new class extends Migration
             $table->unsignedInteger('version_major')->default(1);
             $table->unsignedInteger('version_minor')->default(0);
             $table->boolean('is_current')->default(true);
-            $table->string('storage_disk', 48)->default('sentinel_vault');
+            $table->string('storage_disk', 48)->default('betterdoc_vault');
             $table->string('storage_key', 512);
             $table->string('original_filename');
             $table->string('mime_type', 128);

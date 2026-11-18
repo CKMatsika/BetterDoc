@@ -31,7 +31,7 @@ class AuthController extends Controller
     public function showLogin(): Response
     {
         $demoUsers = [];
-        if ((bool) config('sentinel.demo_switcher_enabled', false)) {
+        if ((bool) config('betterdoc.demo_switcher_enabled', false)) {
             $demoUsers = User::query()
                 ->with(['tenant', 'clearanceLevel', 'orgUnit', 'compartments'])
                 ->orderBy('tenant_id')
@@ -118,8 +118,8 @@ class AuthController extends Controller
 
         if (! $authenticated) {
             $attempts = $user->failed_login_attempts + 1;
-            $maxAttempts = config()->integer('sentinel.security.max_failed_logins', 5);
-            $lockMinutes = config()->integer('sentinel.security.lockout_minutes', 15);
+            $maxAttempts = config()->integer('betterdoc.security.max_failed_logins', 5);
+            $lockMinutes = config()->integer('betterdoc.security.lockout_minutes', 15);
 
             $user->update([
                 'failed_login_attempts' => $attempts,
@@ -181,7 +181,7 @@ class AuthController extends Controller
 
     public function demoLogin(Request $request): RedirectResponse
     {
-        abort_unless((bool) config('sentinel.demo_switcher_enabled', false), 404);
+        abort_unless((bool) config('betterdoc.demo_switcher_enabled', false), 404);
 
         /** @var array{user_id: string} $validated */
         $validated = $request->validate([

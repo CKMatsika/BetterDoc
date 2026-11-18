@@ -17,11 +17,11 @@ return new class extends Migration
         DB::statement(<<<'SQL'
             DO $$
             BEGIN
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'sentinel_app') THEN
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO sentinel_app;
-                    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO sentinel_app;
-                    REVOKE UPDATE, DELETE, TRUNCATE ON audit_events FROM sentinel_app;
-                    GRANT SELECT, INSERT ON audit_events TO sentinel_app;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'betterdoc_app') THEN
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO betterdoc_app;
+                    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO betterdoc_app;
+                    REVOKE UPDATE, DELETE, TRUNCATE ON audit_events FROM betterdoc_app;
+                    GRANT SELECT, INSERT ON audit_events TO betterdoc_app;
                 END IF;
             END
             $$;
@@ -35,13 +35,13 @@ return new class extends Migration
                 CREATE POLICY {$table}_mac_access ON {$table}
                 FOR ALL
                 USING (
-                    tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                    tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                     AND EXISTS (
                         SELECT 1 FROM documents d WHERE d.id = {$table}.document_id
                     )
                 )
                 WITH CHECK (
-                    tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                    tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 )
             SQL);
         }
@@ -53,13 +53,13 @@ return new class extends Migration
             CREATE POLICY workflow_tasks_mac_access ON workflow_tasks
             FOR ALL
             USING (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 AND EXISTS (
                     SELECT 1 FROM workflow_instances wi WHERE wi.id = workflow_tasks.instance_id
                 )
             )
             WITH CHECK (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
             )
         SQL);
 
@@ -70,35 +70,35 @@ return new class extends Migration
             CREATE POLICY user_notifications_owner_select ON user_notifications
             FOR SELECT
             USING (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
-                AND user_id = NULLIF(current_setting('sentinel.user_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
+                AND user_id = NULLIF(current_setting('betterdoc.user_id', true), '')::uuid
             )
         SQL);
         DB::statement(<<<'SQL'
             CREATE POLICY user_notifications_owner_update ON user_notifications
             FOR UPDATE
             USING (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
-                AND user_id = NULLIF(current_setting('sentinel.user_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
+                AND user_id = NULLIF(current_setting('betterdoc.user_id', true), '')::uuid
             )
             WITH CHECK (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
-                AND user_id = NULLIF(current_setting('sentinel.user_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
+                AND user_id = NULLIF(current_setting('betterdoc.user_id', true), '')::uuid
             )
         SQL);
         DB::statement(<<<'SQL'
             CREATE POLICY user_notifications_owner_delete ON user_notifications
             FOR DELETE
             USING (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
-                AND user_id = NULLIF(current_setting('sentinel.user_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
+                AND user_id = NULLIF(current_setting('betterdoc.user_id', true), '')::uuid
             )
         SQL);
         DB::statement(<<<'SQL'
             CREATE POLICY user_notifications_tenant_insert ON user_notifications
             FOR INSERT
             WITH CHECK (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
             )
         SQL);
 
@@ -110,17 +110,17 @@ return new class extends Migration
                 CREATE POLICY {$table}_tenant_isolation ON {$table}
                 FOR ALL
                 USING (
-                    tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                    tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 )
                 WITH CHECK (
-                    tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                    tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 )
             SQL);
         }
 
         // SECURITY DEFINER lookup for unauthenticated Collabora WOPI server callbacks by hashed token
         DB::statement(<<<'SQL'
-            CREATE OR REPLACE FUNCTION sentinel_wopi_token_lookup(p_token_hash char(64))
+            CREATE OR REPLACE FUNCTION betterdoc_wopi_token_lookup(p_token_hash char(64))
             RETURNS jsonb
             LANGUAGE plpgsql
             SECURITY DEFINER
@@ -162,7 +162,7 @@ return new class extends Migration
             return;
         }
 
-        DB::statement('DROP FUNCTION IF EXISTS sentinel_wopi_token_lookup(char)');
+        DB::statement('DROP FUNCTION IF EXISTS betterdoc_wopi_token_lookup(char)');
 
         foreach (['workflow_definitions', 'document_templates', 'retention_schedules', 'wopi_tokens'] as $table) {
             DB::statement("DROP POLICY IF EXISTS {$table}_tenant_isolation ON {$table}");

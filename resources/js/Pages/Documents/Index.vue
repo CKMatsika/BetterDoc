@@ -5,7 +5,7 @@ import { Folder, Plus, Search, Lock, Upload, Bookmark, Tag as TagIcon } from '@l
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ClassificationBadge from '@/Components/ClassificationBadge.vue';
 import ResumableUploader from '@/Components/ResumableUploader.vue';
-import type { SharedProps } from '@/types/sentinel';
+import type { SharedProps } from '@/types/betterdoc';
 
 interface CabinetRow {
     id: string;

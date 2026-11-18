@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PKI_DIR="${SENTINEL_PKI_DIR:-/var/lib/sentinel-pki}"
-HSM_TOKEN="${SENTINEL_HSM_TOKEN:-sentinel-ca}"
-SOFTHSM_PIN="${SENTINEL_HSM_PIN:-123456}"
-SOFTHSM_SO_PIN="${SENTINEL_HSM_SO_PIN:-654321}"
+PKI_DIR="${BETTERDOC_PKI_DIR:-/var/lib/betterdoc-pki}"
+HSM_TOKEN="${BETTERDOC_HSM_TOKEN:-betterdoc-ca}"
+SOFTHSM_PIN="${BETTERDOC_HSM_PIN:-123456}"
+SOFTHSM_SO_PIN="${BETTERDOC_HSM_SO_PIN:-654321}"
 
 mkdir -p "${PKI_DIR}/root" "${PKI_DIR}/intermediate" "${PKI_DIR}/crl"
 
@@ -20,9 +20,9 @@ if [ ! -f "${PKI_DIR}/root/ca.crt" ]; then
     chmod 400 "${PKI_DIR}/root/ca.key.enc"
     openssl req -x509 -new -key "${PKI_DIR}/root/ca.key.enc" -passin "pass:${SOFTHSM_SO_PIN}" \
         -sha256 -days 3650 \
-        -subj "/O=SENTINEL DMS/OU=Offline Trust Anchor/CN=SENTINEL Offline Root CA" \
+        -subj "/O=BetterDoc DMS/OU=Offline Trust Anchor/CN=BetterDoc Offline Root CA" \
         -addext "basicConstraints=critical,CA:TRUE,pathlen:1" \
         -addext "keyUsage=critical,keyCertSign,cRLSign" \
         -out "${PKI_DIR}/root/ca.crt"
-    echo "[sentinel-pki] Offline Root CA initialized at ${PKI_DIR}/root/ca.crt"
+    echo "[betterdoc-pki] Offline Root CA initialized at ${PKI_DIR}/root/ca.crt"
 fi

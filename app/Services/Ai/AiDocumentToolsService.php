@@ -113,7 +113,7 @@ class AiDocumentToolsService
             $clauses[] = ['category' => 'General Provisions', 'excerpt' => mb_substr($text, 0, 260)];
         }
 
-        $model = 'sentinel-clause-extractor-v1';
+        $model = 'betterdoc-clause-extractor-v1';
         $this->recordAudit($user, $document, 'extract_clauses', $text, json_encode($clauses, JSON_THROW_ON_ERROR), $model, $started, $request);
 
         return ['clauses' => array_slice($clauses, 0, 12), 'model' => $model];
@@ -146,7 +146,7 @@ class AiDocumentToolsService
             count($removed),
         );
 
-        $model = 'sentinel-version-diff-v1';
+        $model = 'betterdoc-version-diff-v1';
         $this->recordAudit($user, $document, 'compare_versions', $fromText."\n".$toText, $summary, $model, $started, $request);
 
         return [
@@ -245,7 +245,7 @@ class AiDocumentToolsService
             $applied = true;
         }
 
-        $this->recordAudit($user, $document, 'auto_tag', $haystack, implode(',', $matched), 'sentinel-autotag-v1', $started, $request);
+        $this->recordAudit($user, $document, 'auto_tag', $haystack, implode(',', $matched), 'betterdoc-autotag-v1', $started, $request);
 
         return ['tags' => $matched, 'applied' => $applied];
     }
@@ -288,7 +288,7 @@ class AiDocumentToolsService
 
         usort($duplicates, static fn (array $a, array $b): int => $b['similarity'] <=> $a['similarity']);
 
-        $this->recordAudit($user, $document, 'duplicate_check', $srcText, json_encode($duplicates, JSON_THROW_ON_ERROR), 'sentinel-dup-v1', $started, $request);
+        $this->recordAudit($user, $document, 'duplicate_check', $srcText, json_encode($duplicates, JSON_THROW_ON_ERROR), 'betterdoc-dup-v1', $started, $request);
 
         return array_slice($duplicates, 0, 5);
     }
@@ -306,7 +306,7 @@ class AiDocumentToolsService
         $langMap = ['en' => 'English', 'sn' => 'ChiShona', 'nd' => 'IsiNdebele'];
         $targetLabel = $langMap[$targetLang] ?? 'ChiShona';
 
-        if (config()->string('sentinel.ai.driver', 'local_hybrid') === 'ollama') {
+        if (config()->string('betterdoc.ai.driver', 'local_hybrid') === 'ollama') {
             $gen = $this->ai->generateText(
                 "Translate the following official document text accurately into {$targetLabel}. Preserve numbers and reference codes.",
                 mb_substr($text, 0, 2500)
@@ -330,11 +330,11 @@ class AiDocumentToolsService
                     $notes[] = "{$enWord} -> {$replacement}";
                 }
             }
-            $header = $targetLang === 'sn' ? '[Dudziro yeChiShona — SENTINEL Offline Translator]' : '[Ukuhunyushwa kwesiNdebele — SENTINEL Offline Translator]';
+            $header = $targetLang === 'sn' ? '[Dudziro yeChiShona — BetterDoc Offline Translator]' : '[Ukuhunyushwa kwesiNdebele — BetterDoc Offline Translator]';
             $translated = $header."\n".$translated.($notes !== [] ? "\n\nKey Terms: ".implode(' · ', $notes) : '');
         }
 
-        $model = 'sentinel-en-sn-nd-offline-v1';
+        $model = 'betterdoc-en-sn-nd-offline-v1';
         if ($document !== null) {
             $this->recordAudit($user, $document, "translate_{$targetLang}", $text, $translated, $model, $started, $request);
         }

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\BetterDocRole;
 use App\Enums\DispositionAction;
 use App\Enums\ProfileCode;
 use App\Enums\RetentionTrigger;
-use App\Enums\SentinelRole;
 use App\Enums\TemplateCategory;
 use App\Models\ClearanceLevel;
 use App\Models\DocumentTemplate;
@@ -35,8 +35,8 @@ class SeedPhase4DefaultsHelper
             'nodes' => [
                 ['id' => 'n_start', 'type' => 'start', 'label' => 'Start Submission', 'x' => 60, 'y' => 140],
                 ['id' => 'n_gw', 'type' => 'conditional_gateway', 'label' => 'Sensitive Classification?', 'x' => 230, 'y' => 140],
-                ['id' => 'n_records', 'type' => 'approval', 'label' => 'Records Officer Review', 'assignee_role' => SentinelRole::RecordsOfficer->value, 'sla_hours' => 24, 'x' => 420, 'y' => 60],
-                ['id' => 'n_exec', 'type' => 'approval', 'label' => 'Senior Approver Sign-Off', 'assignee_role' => SentinelRole::Approver->value, 'sla_hours' => 12, 'x' => 420, 'y' => 220],
+                ['id' => 'n_records', 'type' => 'approval', 'label' => 'Records Officer Review', 'assignee_role' => BetterDocRole::RecordsOfficer->value, 'sla_hours' => 24, 'x' => 420, 'y' => 60],
+                ['id' => 'n_exec', 'type' => 'approval', 'label' => 'Senior Approver Sign-Off', 'assignee_role' => BetterDocRole::Approver->value, 'sla_hours' => 12, 'x' => 420, 'y' => 220],
                 ['id' => 'n_end', 'type' => 'end', 'label' => 'Workflow Completed', 'x' => 650, 'y' => 140],
             ],
             'edges' => [
@@ -136,7 +136,7 @@ class SeedPhase4DefaultsHelper
                     'trigger_event' => RetentionTrigger::CreatedAt,
                     'retention_days' => $s['days'],
                     'disposition_action' => $s['action'],
-                    'description' => 'ISO 15489 statutory retention schedule seeded by SENTINEL.',
+                    'description' => 'ISO 15489 statutory retention schedule seeded by BetterDoc.',
                     'is_active' => true,
                 ]
             );

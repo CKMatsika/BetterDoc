@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Storage;
 
 class RecoverInterruptedUploadsCommand extends Command
 {
-    protected $signature = 'sentinel:uploads:recover';
+    protected $signature = 'betterdoc:uploads:recover';
 
     protected $description = 'Recover or clean up upload sessions and processing jobs interrupted by power outages.';
 
@@ -26,7 +26,7 @@ class RecoverInterruptedUploadsCommand extends Command
 
         foreach ($expiredSessions as $session) {
             for ($i = 0; $i < $session->total_chunks; $i++) {
-                Storage::disk('sentinel_quarantine')->delete("{$session->storage_temp_prefix}/part_{$i}");
+                Storage::disk('betterdoc_quarantine')->delete("{$session->storage_temp_prefix}/part_{$i}");
             }
             $session->update(['status' => UploadStatus::Expired]);
             $expiredCount++;

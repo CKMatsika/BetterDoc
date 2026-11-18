@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 
 class Seed100kBenchmarkCommand extends Command
 {
-    protected $signature = 'sentinel:benchmark:seed-100k {--count=100000 : Total synthetic documents to seed}';
+    protected $signature = 'betterdoc:benchmark:seed-100k {--count=100000 : Total synthetic documents to seed}';
 
     protected $description = 'Seed 100,000 synthetic documents into PostgreSQL to benchmark <1s search & RLS isolation.';
 

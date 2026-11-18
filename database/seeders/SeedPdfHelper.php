@@ -63,7 +63,7 @@ class SeedPdfHelper
         }
         $pdfBytes .= "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n{$xref}\n%%EOF\n";
 
-        $tmpPdf = tempnam(sys_get_temp_dir(), 'sentinel_seed_');
+        $tmpPdf = tempnam(sys_get_temp_dir(), 'betterdoc_seed_');
         if ($tmpPdf === false) {
             return;
         }
@@ -71,7 +71,7 @@ class SeedPdfHelper
         file_put_contents($tmpPdf, $pdfBytes);
         $verId = (string) Str::uuid7();
         $storageKey = "tenants/{$tenant->id}/docs/{$doc->id}/v1_0_{$verId}.enc";
-        $enc = app(EnvelopeEncryptionService::class)->encryptFileToDisk($tmpPdf, 'sentinel_vault', $storageKey);
+        $enc = app(EnvelopeEncryptionService::class)->encryptFileToDisk($tmpPdf, 'betterdoc_vault', $storageKey);
         @unlink($tmpPdf);
 
         $version = new DocumentVersion([
@@ -80,7 +80,7 @@ class SeedPdfHelper
             'version_major' => 1,
             'version_minor' => 0,
             'is_current' => true,
-            'storage_disk' => 'sentinel_vault',
+            'storage_disk' => 'betterdoc_vault',
             'storage_key' => $storageKey,
             'original_filename' => str_replace('/', '_', $docNumber).'.pdf',
             'mime_type' => 'application/pdf',

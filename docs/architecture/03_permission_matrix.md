@@ -1,6 +1,6 @@
-# SENTINEL DMS — Permission Matrix & Access Control Specification
+# BetterDoc DMS — Permission Matrix & Access Control Specification
 
-**Document ID:** `SENTINEL-IAM-003`  
+**Document ID:** `BetterDoc-IAM-003`  
 **Security Model:** Mandatory Access Control (Bell-LaPadula MAC) $\cap$ Role-Based Access Control (RBAC) $\cap$ Attribute-Based Access Control (ABAC) $\cap$ Discretionary/Explicit Grants (DAC)
 
 ---
@@ -32,7 +32,7 @@ flowchart TD
 
 ### Critical Invariants
 1. **Separation of Duty (Admin $\neq$ Cleared Reader):** A System `Admin` with `Internal` clearance can manage users, printers, and backups, **never** read `Confidential`, `Secret`, or `Top Secret` documents unless independently vetted with that clearance and compartments.
-2. **Existence Hiding (`404` vs `403` Oracle Prevention):** When Step 2, 3, or 4 fails on direct URL/API access (`/documents/{uuid}`, `/thumbnails/{uuid}`, `/api/v1/documents/{uuid}`), SENTINEL returns **`404 Not Found`** with a generic body, identical to a non-existent UUID. It never reveals title, classification, owner, or existence.
+2. **Existence Hiding (`404` vs `403` Oracle Prevention):** When Step 2, 3, or 4 fails on direct URL/API access (`/documents/{uuid}`, `/thumbnails/{uuid}`, `/api/v1/documents/{uuid}`), BetterDoc returns **`404 Not Found`** with a generic body, identical to a non-existent UUID. It never reveals title, classification, owner, or existence.
 3. **Configurable Bell-LaPadula No-Write-Down (`*-property`):**
    - **Defence Profile (Enforced):** A user operating on a `Secret` document cannot move it into an `Internal` folder, copy extracted content into an `Unclassified` correspondence draft, or save an AI summary referencing `Secret` sources at `Internal`. Lowering classification requires the **Two-Person Declassification Workflow**.
    - **Financial / Corporate Profile (Advisory / Guarded):** Moving or saving into a lower-classified folder triggers a blocking warning requiring explicit confirmation + audit justification (or two-person approval for `Restricted`).

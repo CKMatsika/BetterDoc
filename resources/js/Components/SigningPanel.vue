@@ -13,7 +13,7 @@ import {
     XCircle,
 } from '@lucide/vue';
 import SignaturePadCanvas from '@/Components/SignaturePadCanvas.vue';
-import type { SharedProps } from '@/types/sentinel';
+import type { SharedProps } from '@/types/betterdoc';
 
 export interface SignatureRequestItem {
     id: string;

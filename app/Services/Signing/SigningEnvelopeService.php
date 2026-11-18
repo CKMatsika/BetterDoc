@@ -124,7 +124,7 @@ class SigningEnvelopeService
                     'sign_order' => $order,
                     'tier' => $tier,
                     'status' => $isReady ? SignatureRequestStatus::Ready : SignatureRequestStatus::Pending,
-                    'field_name' => 'SentinelSig_'.($idx + 1).'_'.substr(str_replace('-', '', $envelope->id), 0, 6),
+                    'field_name' => 'BetterDocSig_'.($idx + 1).'_'.substr(str_replace('-', '', $envelope->id), 0, 6),
                     'field_coords_json' => $coords,
                 ]);
 
@@ -164,7 +164,7 @@ class SigningEnvelopeService
         User $actor,
         ?UserSession $session,
         string $reason,
-        string $location = 'SENTINEL LAN',
+        string $location = 'BetterDoc LAN',
         ?SignatureTier $overrideTier = null,
         ?string $typedName = null,
         ?string $drawnSvgPath = null,
@@ -315,7 +315,7 @@ class SigningEnvelopeService
         );
 
         $token = (string) Str::uuid7();
-        cache()->put("sentinel:ext_sig:{$sigRequest->id}:{$token}", [
+        cache()->put("betterdoc:ext_sig:{$sigRequest->id}:{$token}", [
             'state' => $state,
             'working_version_id' => $workingVersion->id,
             'user_certificate_id' => $userCert->id,
@@ -339,7 +339,7 @@ class SigningEnvelopeService
         string $signatureB64,
         ?Request $request = null,
     ): SignatureRequest {
-        $cacheKey = "sentinel:ext_sig:{$sigRequest->id}:{$challengeToken}";
+        $cacheKey = "betterdoc:ext_sig:{$sigRequest->id}:{$challengeToken}";
         /** @var mixed $cached */
         $cached = cache()->pull($cacheKey);
         if (
@@ -660,11 +660,11 @@ class SigningEnvelopeService
 
     private function assertFreshMfaStepUp(?UserSession $session): void
     {
-        if (! config()->boolean('sentinel.pki.require_fresh_mfa_for_pades', true)) {
+        if (! config()->boolean('betterdoc.pki.require_fresh_mfa_for_pades', true)) {
             return;
         }
 
-        $ttl = config()->integer('sentinel.security.step_up_mfa_ttl_minutes', 5);
+        $ttl = config()->integer('betterdoc.security.step_up_mfa_ttl_minutes', 5);
         if ($session === null || ! $session->isMfaFresh($ttl)) {
             throw ValidationException::withMessages([
                 'mfa' => "Fresh MFA step-up verification (within {$ttl} minutes) is required before applying a PAdES X.509 signature.",

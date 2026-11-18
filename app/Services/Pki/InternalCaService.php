@@ -42,7 +42,7 @@ class InternalCaService
             return $existingInter;
         }
 
-        $baseUrl = rtrim(config()->string('app.url', 'https://sentinel.lan'), '/');
+        $baseUrl = rtrim(config()->string('app.url', 'https://betterdoc.lan'), '/');
         $raw = $this->bridge->execute('bootstrap_pki', [
             'tenant_name' => $tenant->name,
             'tenant_slug' => $tenant->slug,
@@ -102,7 +102,7 @@ class InternalCaService
         $inter = $this->ensureBootstrapped($tenant, $actor, $request);
 
         $caKey = $this->hsm->unsealKey($tenant->id, $inter->pkcs11_key_label);
-        $baseUrl = rtrim(config()->string('app.url', 'https://sentinel.lan'), '/');
+        $baseUrl = rtrim(config()->string('app.url', 'https://betterdoc.lan'), '/');
 
         try {
             $issued = $this->bridge->execute('issue_user_cert', [

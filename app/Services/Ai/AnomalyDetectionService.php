@@ -6,7 +6,7 @@ namespace App\Services\Ai;
 
 use App\Enums\AnomalySeverity;
 use App\Enums\AnomalyStatus;
-use App\Enums\SentinelRole;
+use App\Enums\BetterDocRole;
 use App\Models\AiAnomalyAlert;
 use App\Models\AuditEvent;
 use App\Models\IdpExtraction;
@@ -34,11 +34,11 @@ class AnomalyDetectionService
     {
         $createdAlerts = [];
 
-        $windowMinutes = max(1, config()->integer('sentinel.ai.anomaly.window_minutes', 15));
-        $downloadThreshold = max(2, config()->integer('sentinel.ai.anomaly.bulk_download_threshold', 5));
-        $viewThreshold = max(5, config()->integer('sentinel.ai.anomaly.bulk_view_threshold', 25));
-        $bizStart = config()->string('sentinel.ai.anomaly.business_hours_start', '06:00');
-        $bizEnd = config()->string('sentinel.ai.anomaly.business_hours_end', '19:00');
+        $windowMinutes = max(1, config()->integer('betterdoc.ai.anomaly.window_minutes', 15));
+        $downloadThreshold = max(2, config()->integer('betterdoc.ai.anomaly.bulk_download_threshold', 5));
+        $viewThreshold = max(5, config()->integer('betterdoc.ai.anomaly.bulk_view_threshold', 25));
+        $bizStart = config()->string('betterdoc.ai.anomaly.business_hours_start', '06:00');
+        $bizEnd = config()->string('betterdoc.ai.anomaly.business_hours_end', '19:00');
         $since = now()->subMinutes($windowMinutes);
 
         // 1. Bulk Downloads / Views in sliding window
@@ -139,7 +139,7 @@ class AnomalyDetectionService
 
         // 3. Suspicious / Duplicate Invoice IDP Pattern
         if (DB::connection()->getDriverName() === 'pgsql') {
-            $dupRows = DB::select('SELECT vendor_name, invoice_number, first_document_id, duplicate_document_id FROM sentinel_scan_duplicate_invoices(?)', [$tenantId]);
+            $dupRows = DB::select('SELECT vendor_name, invoice_number, first_document_id, duplicate_document_id FROM betterdoc_scan_duplicate_invoices(?)', [$tenantId]);
             foreach ($dupRows as $dup) {
                 if (! $dup instanceof stdClass) {
                     continue;
@@ -278,7 +278,7 @@ class AnomalyDetectionService
     private function documentRowExists(string $tenantId, string $documentId): bool
     {
         if (DB::connection()->getDriverName() === 'pgsql') {
-            $row = DB::selectOne('SELECT sentinel_document_exists(?, ?) AS present', [$tenantId, $documentId]);
+            $row = DB::selectOne('SELECT betterdoc_document_exists(?, ?) AS present', [$tenantId, $documentId]);
 
             return $row instanceof stdClass && (bool) ($row->present ?? false);
         }
@@ -296,7 +296,7 @@ class AnomalyDetectionService
         $watchers = User::query()
             ->where('tenant_id', $tenantId)
             ->whereHas('roles', static function ($q): void {
-                $q->whereIn('name', [SentinelRole::Auditor->value, SentinelRole::SystemAdmin->value]);
+                $q->whereIn('name', [BetterDocRole::Auditor->value, BetterDocRole::SystemAdmin->value]);
             })
             ->get();
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Collaboration;
 
-use App\Enums\SentinelRole;
+use App\Enums\BetterDocRole;
 use App\Events\DocumentActivityBroadcast;
 use App\Events\TenantUserAlertBroadcast;
 use App\Models\BreakGlassSession;
@@ -74,7 +74,7 @@ class RealtimeNotificationService
         $watchers = User::query()
             ->where('tenant_id', $session->tenant_id)
             ->whereHas('roles', static function ($q): void {
-                $q->whereIn('name', [SentinelRole::Auditor->value, SentinelRole::SystemAdmin->value]);
+                $q->whereIn('name', [BetterDocRole::Auditor->value, BetterDocRole::SystemAdmin->value]);
             })
             ->get();
 
@@ -121,7 +121,7 @@ class RealtimeNotificationService
         try {
             event($event);
         } catch (Throwable $e) {
-            Log::warning('Sentinel Reverb broadcast skipped cleanly.', [
+            Log::warning('BetterDoc Reverb broadcast skipped cleanly.', [
                 'event' => $event::class,
                 'error' => $e->getMessage(),
             ]);

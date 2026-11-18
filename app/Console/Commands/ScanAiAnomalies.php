@@ -11,7 +11,7 @@ use Illuminate\Console\Command;
 
 class ScanAiAnomalies extends Command
 {
-    protected $signature = 'sentinel:ai:scan-anomalies {--tenant= : Optional tenant UUID to scope scan}';
+    protected $signature = 'betterdoc:ai:scan-anomalies {--tenant= : Optional tenant UUID to scope scan}';
 
     protected $description = 'Scan audit ledger and IDP records for bulk downloads, after-hours Secret+ access, and duplicate invoice anomalies';
 

@@ -198,7 +198,7 @@ class CollaborationController extends Controller
                 'mime_type' => $currentVersion instanceof DocumentVersion ? $currentVersion->mime_type : 'application/pdf',
             ],
             'wopiSession' => $session,
-            'collaboraEnabled' => config()->boolean('sentinel.collabora.enabled', false),
+            'collaboraEnabled' => config()->boolean('betterdoc.collabora.enabled', false),
         ]);
     }
 

@@ -88,7 +88,7 @@ def watermark_pdf(
             tw2.append(pymupdf.Point(cx - (text_width * 0.5), sub_y), label, font=font, fontsize=12)
             tw2.write_text(page, morph=(pymupdf.Point(cx, sub_y), pymupdf.Matrix(-45)), overlay=True)
 
-        doc.set_metadata({"producer": "SENTINEL DMS Secure Print Watermark Engine"})
+        doc.set_metadata({"producer": "BetterDoc DMS Secure Print Watermark Engine"})
         out_bytes = doc.tobytes(garbage=3, deflate=True, clean=True)
     finally:
         doc.close()
@@ -128,14 +128,14 @@ def generate_separator_pdf(
     cabinet_code: str = "",
     classification_name: str = "Internal",
 ) -> bytes:
-    """Create a print-ready SENTINEL Barcode Separator Sheet PDF (QR + raster sync barcode + metadata)."""
+    """Create a print-ready BetterDoc Barcode Separator Sheet PDF (QR + raster sync barcode + metadata)."""
     meta = {
         "doc_type": doc_type.strip()[:32] or "general",
         "title": title.strip()[:80] or "Scanned Record",
         "cabinet": cabinet_code.strip()[:32],
         "classification": classification_name.strip()[:32] or "Internal",
     }
-    marker_payload = "SENTINEL-SEP|" + json.dumps(meta, separators=(",", ":"), ensure_ascii=True)
+    marker_payload = "BETTERDOC-SEP|" + json.dumps(meta, separators=(",", ":"), ensure_ascii=True)
 
     qr = qrcode.QRCode(border=2, box_size=6)
     qr.add_data(marker_payload)
@@ -150,7 +150,7 @@ def generate_separator_pdf(
 
         # Header frame
         page.draw_rect(pymupdf.Rect(36, 36, 559, 108), color=(0.06, 0.09, 0.16), fill=(0.06, 0.09, 0.16))
-        page.insert_text(pymupdf.Point(54, 68), "SENTINEL DMS — BATCH SEPARATOR SHEET", fontsize=17, fontname="helv", color=(1, 1, 1))
+        page.insert_text(pymupdf.Point(54, 68), "BetterDoc DMS — BATCH SEPARATOR SHEET", fontsize=17, fontname="helv", color=(1, 1, 1))
         page.insert_text(
             pymupdf.Point(54, 90),
             "PLACE THIS PAGE BEFORE THE NEXT PHYSICAL DOCUMENT IN YOUR SCANNER FEEDER",
@@ -323,13 +323,13 @@ def _decode_raster_barcode_strip(page: pymupdf.Page) -> dict[str, str] | None:
 
 
 def decode_separator_from_page(page: pymupdf.Page) -> dict[str, str] | None:
-    """Detect whether a page is a SENTINEL separator sheet via QR/zbarimg, raster barcode, or text marker."""
+    """Detect whether a page is a BetterDoc separator sheet via QR/zbarimg, raster barcode, or text marker."""
     # 1. Native text check (fast, handles generated separator PDFs & OCR'd PDFs)
     text = page.get_text("text") or ""
     joined = re.sub(r"\s+", "", text)
-    m = re.search(r"SENTINEL-SEP\|(\{[^\r\n]+\})", text)
+    m = re.search(r"BetterDoc-SEP\|(\{[^\r\n]+\})", text)
     if not m:
-        m = re.search(r"SENTINEL-SEP\|(\{[^\}]+\})", joined)
+        m = re.search(r"BetterDoc-SEP\|(\{[^\}]+\})", joined)
     if m:
         try:
             parsed = json.loads(m.group(1))
@@ -353,7 +353,7 @@ def decode_separator_from_page(page: pymupdf.Page) -> dict[str, str] | None:
                 proc = subprocess.run([zbar_bin, "--quiet", "--raw", tmp.name], capture_output=True, text=True, timeout=6)
                 if proc.returncode == 0 and proc.stdout.strip():
                     for line in proc.stdout.strip().splitlines():
-                        if line.startswith("SENTINEL-SEP|"):
+                        if line.startswith("BETTERDOC-SEP|"):
                             payload_str = line.split("|", 1)[1]
                             try:
                                 parsed = json.loads(payload_str)

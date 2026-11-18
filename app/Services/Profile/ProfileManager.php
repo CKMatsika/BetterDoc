@@ -26,7 +26,7 @@ class ProfileManager
      */
     public function loadPack(ProfileCode $code): array
     {
-        $path = rtrim(config()->string('sentinel.profiles_path'), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$code->value.'.yaml';
+        $path = rtrim(config()->string('betterdoc.profiles_path'), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$code->value.'.yaml';
         if (! File::exists($path)) {
             throw new RuntimeException("Profile pack not found: {$path}");
         }
@@ -92,7 +92,7 @@ class ProfileManager
                 'is_active' => true,
             ]);
 
-            $airGapped = config()->boolean('sentinel.air_gapped', true) || (bool) ($pack['air_gapped_enforced'] ?? false);
+            $airGapped = config()->boolean('betterdoc.air_gapped', true) || (bool) ($pack['air_gapped_enforced'] ?? false);
 
             $tenant->update([
                 'active_profile_code' => $code,

@@ -1,6 +1,6 @@
-# SENTINEL DMS — Phased Implementation Plan & Verification Roadmap
+# BetterDoc DMS — Phased Implementation Plan & Verification Roadmap
 
-**Document ID:** `SENTINEL-PLAN-005`  
+**Document ID:** `BETTERDOC-PLAN-005`  
 **Status:** Proposed — **Awaiting Approval Before Phase 1 Coding**
 
 ---
@@ -29,8 +29,8 @@ flowchart LR
 
 ### Phase 1 — Core Platform, Air-Gap Infra, Security Foundation & RLS Kernel
 - **Deliverables:**
-  - Monorepo scaffold (`sentinel-app` Laravel 12 + FrankenPHP Octane + Inertia/Vue 3/TS/Tailwind/shadcn-vue + Docker Compose stack).
-  - **Air-Gap Build Guardrail:** Self-hosted fonts/icons/assets + `verify-airgap-build` CI check + strict CSP + `SentinelHttpClient` egress blocker.
+  - Monorepo scaffold (`betterdoc-app` Laravel 12 + FrankenPHP Octane + Inertia/Vue 3/TS/Tailwind/shadcn-vue + Docker Compose stack).
+  - **Air-Gap Build Guardrail:** Self-hosted fonts/icons/assets + `verify-airgap-build` CI check + strict CSP + `BetterDocHttpClient` egress blocker.
   - **Multi-Profile Engine:** YAML/JSON profile loader + setup switcher for `defence`, `financial`, and `corporate` (branding, terminology, classification ladder, feature flags via Pennant).
   - **IAM & MAC/ABAC Core:** Local auth + LDAP/LDAPS connector + mandatory MFA (TOTP + WebAuthn/FIDO2), `org_units` (`ltree`), `clearance_levels`, `compartments`, `spatie/laravel-permission` + `ClearancePolicyEngine` + `404` anti-enumeration.
   - **PostgreSQL Hardening:** `FORCE ROW LEVEL SECURITY` policies on core tables + `DbSecurityContext` (`SET LOCAL` transaction middleware + Octane `RequestTerminated` reset).
@@ -62,8 +62,8 @@ flowchart LR
 
 ### Phase 3 — Internal PKI, PAdES Digital Signatures & Offline Verification
 - **Deliverables:**
-  - `sentinel-pki`: Offline Root CA bootstrap script, `step-ca` Intermediate CA backed by SoftHSMv2/PKCS#11, Local RFC 3161 TSA (`sentinel-tsa`), Local OCSP & CRL responder.
-  - `sentinel-signer`: Python FastAPI + `pyHanko` + `python-pkcs11` mTLS microservice.
+  - `betterdoc-pki`: Offline Root CA bootstrap script, `step-ca` Intermediate CA backed by SoftHSMv2/PKCS#11, Local RFC 3161 TSA (`betterdoc-tsa`), Local OCSP & CRL responder.
+  - `betterdoc-signer`: Python FastAPI + `pyHanko` + `python-pkcs11` mTLS microservice.
   - **Three Signature Tiers:** (1) Drawn/Typed Stamp + Audit Chain, (2) X.509 PAdES-B-LT/LTA (HSM-custody with MFA step-up OR external digest prep for Smartcard), (3) Workflow Approval Signature.
   - **Multi-Party Signing Envelopes:** Ordered/parallel signers, PDF signature field placement UI, decline/reassign, reminders, tamper-evident Certificate Page + Verification QR Code.
   - **Verification Engine:** Automatic verification banner on every open (`VALID` / `ALTERED` / `EXPIRED` / `REVOKED`) + QR verification endpoint.
@@ -107,7 +107,7 @@ flowchart LR
   - **Secure Print Release:** Held print queue with 6-digit PIN / RFID badge release kiosk portal + mandatory server-side dynamic print watermarks.
   - **Scan Capture:** `sane-airscan` (eSCL), SANE, Watch Hot Folders, Local Mail-In (IMAP/Postfix local relay), `zbar` Barcode Separator Sheet generation & batch splitting, auto-deskew/crop.
   - **PWA Offline Mode:** Service Worker precaching + IndexedDB offline capture queue for mobile camera scans that auto-upload via chunked upload when LAN returns.
-  - **`Sentinel Local Agent`:** Lightweight desktop helper (`127.0.0.1` paired API) bridging USB TWAIN/WIA scanners and workstation PKCS#11 smartcards.
+  - **`BetterDoc Local Agent`:** Lightweight desktop helper (`127.0.0.1` paired API) bridging USB TWAIN/WIA scanners and workstation PKCS#11 smartcards.
 - **Acceptance Tests:**
   - Attempting to print `Secret` document to `Internal`-capped printer fails policy check.
   - Secure print job stays `held` until valid PIN released; 3 invalid PINs lock release.
@@ -154,7 +154,7 @@ flowchart LR
 ## 4. Sensible Defaults Recorded in ADRs (Confirm or Override Before Phase 1)
 
 No blocking questions prevent starting, as all defaults are captured in ADRs (`01_architecture.md` Section 7). Please confirm if you wish to override any of these defaults when approving Phase 1:
-1. **PAdES Signing Engine:** **`pyHanko` + `python-pkcs11`** (`sentinel-signer`) is selected as the lightweight, MIT-licensed default over Java EU DSS (keeping `PdfSignerInterface` swappable).
+1. **PAdES Signing Engine:** **`pyHanko` + `python-pkcs11`** (`betterdoc-signer`) is selected as the lightweight, MIT-licensed default over Java EU DSS (keeping `PdfSignerInterface` swappable).
 2. **Offline Office Co-Editing:** **Collabora Online (CODE)** is selected over ONLYOFFICE CE to avoid CE's 20-connection limit while keeping WOPI swappable.
 3. **Default Search Stack:** **Meilisearch + PostgreSQL `pgvector`** is selected over OpenSearch for low RAM footprint on office hardware and exact pre-retrieval RLS enforcement.
 4. **Default Boot Demo Profile:** Seed **both** realistic demo tenants (`afz-defence` and `golden-knot-finance`) out of the box with a clean tenant/profile login switcher so both profiles can be demonstrated immediately.

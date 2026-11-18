@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Ai;
 
 use App\Exceptions\AirGapViolationException;
-use App\Services\Security\SentinelHttpClientGuard;
+use App\Services\Security\BetterDocHttpClientGuard;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Psr\Http\Message\RequestInterface;
@@ -14,7 +14,7 @@ use Throwable;
 class LocalAiGatewayService
 {
     public function __construct(
-        private readonly SentinelHttpClientGuard $guard,
+        private readonly BetterDocHttpClientGuard $guard,
     ) {}
 
     /**
@@ -24,10 +24,10 @@ class LocalAiGatewayService
      */
     public function assertLocalCompliance(): void
     {
-        $airGapped = config()->boolean('sentinel.air_gapped', true);
-        $driver = config()->string('sentinel.ai.driver', 'local_hybrid');
-        $cloudEnabled = config()->boolean('sentinel.ai.cloud_ai_enabled', false);
-        $cloudEndpoint = trim(config()->string('sentinel.ai.cloud_endpoint', ''));
+        $airGapped = config()->boolean('betterdoc.air_gapped', true);
+        $driver = config()->string('betterdoc.ai.driver', 'local_hybrid');
+        $cloudEnabled = config()->boolean('betterdoc.ai.cloud_ai_enabled', false);
+        $cloudEndpoint = trim(config()->string('betterdoc.ai.cloud_endpoint', ''));
 
         if ($airGapped && ($cloudEnabled || $driver === 'cloud_openai' || $cloudEndpoint !== '')) {
             $parsedHost = parse_url($cloudEndpoint, PHP_URL_HOST);
@@ -47,11 +47,11 @@ class LocalAiGatewayService
     {
         $this->assertLocalCompliance();
 
-        $driver = config()->string('sentinel.ai.driver', 'local_hybrid');
-        $embedModel = config()->string('sentinel.ai.embed_model', 'bge-m3');
+        $driver = config()->string('betterdoc.ai.driver', 'local_hybrid');
+        $embedModel = config()->string('betterdoc.ai.embed_model', 'bge-m3');
 
         if ($driver === 'ollama') {
-            $ollamaUrl = rtrim(config()->string('sentinel.ai.ollama_url', 'http://ollama:11434'), '/');
+            $ollamaUrl = rtrim(config()->string('betterdoc.ai.ollama_url', 'http://ollama:11434'), '/');
 
             try {
                 $response = Http::withRequestMiddleware(
@@ -86,11 +86,11 @@ class LocalAiGatewayService
             }
         }
 
-        $dims = max(32, min(1024, config()->integer('sentinel.ai.embedding_dims', 128)));
+        $dims = max(32, min(1024, config()->integer('betterdoc.ai.embedding_dims', 128)));
 
         return [
             'vector' => $this->computeDeterministicEmbedding($text, $dims),
-            'model' => 'sentinel-local-bge-proj',
+            'model' => 'betterdoc-local-bge-proj',
         ];
     }
 
@@ -103,11 +103,11 @@ class LocalAiGatewayService
     {
         $this->assertLocalCompliance();
 
-        $driver = config()->string('sentinel.ai.driver', 'local_hybrid');
-        $chatModel = config()->string('sentinel.ai.chat_model', 'qwen2.5:7b-instruct');
+        $driver = config()->string('betterdoc.ai.driver', 'local_hybrid');
+        $chatModel = config()->string('betterdoc.ai.chat_model', 'qwen2.5:7b-instruct');
 
         if ($driver === 'ollama') {
-            $ollamaUrl = rtrim(config()->string('sentinel.ai.ollama_url', 'http://ollama:11434'), '/');
+            $ollamaUrl = rtrim(config()->string('betterdoc.ai.ollama_url', 'http://ollama:11434'), '/');
 
             try {
                 $response = Http::withRequestMiddleware(
@@ -137,7 +137,7 @@ class LocalAiGatewayService
 
         return [
             'text' => null,
-            'model' => 'sentinel-local-extractive-v1',
+            'model' => 'betterdoc-local-extractive-v1',
         ];
     }
 

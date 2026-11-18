@@ -178,7 +178,7 @@ class DocumentVersioningService
             $nextMajor = ($latest->version_major ?? 0) + 1;
             $newId = (string) Str::uuid7();
             $storageKey = "tenants/{$document->tenant_id}/docs/{$document->id}/v{$nextMajor}_0_{$newId}.enc";
-            $enc = $this->crypto->encryptFileToDisk($tmpPath, 'sentinel_vault', $storageKey);
+            $enc = $this->crypto->encryptFileToDisk($tmpPath, 'betterdoc_vault', $storageKey);
 
             return DB::transaction(function () use ($newId, $document, $source, $nextMajor, $storageKey, $enc, $actor, $request): DocumentVersion {
                 DocumentVersion::query()
@@ -194,7 +194,7 @@ class DocumentVersioningService
                     'version_major' => $nextMajor,
                     'version_minor' => 0,
                     'is_current' => true,
-                    'storage_disk' => 'sentinel_vault',
+                    'storage_disk' => 'betterdoc_vault',
                     'storage_key' => $storageKey,
                     'original_filename' => $source->original_filename,
                     'mime_type' => $source->mime_type,

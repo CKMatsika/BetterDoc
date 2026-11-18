@@ -17,11 +17,11 @@ return new class extends Migration
         DB::statement(<<<'SQL'
             DO $$
             BEGIN
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'sentinel_app') THEN
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO sentinel_app;
-                    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO sentinel_app;
-                    REVOKE UPDATE, DELETE, TRUNCATE ON audit_events FROM sentinel_app;
-                    GRANT SELECT, INSERT ON audit_events TO sentinel_app;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'betterdoc_app') THEN
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO betterdoc_app;
+                    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO betterdoc_app;
+                    REVOKE UPDATE, DELETE, TRUNCATE ON audit_events FROM betterdoc_app;
+                    GRANT SELECT, INSERT ON audit_events TO betterdoc_app;
                 END IF;
             END
             $$;
@@ -34,10 +34,10 @@ return new class extends Migration
                 CREATE POLICY {$table}_tenant_isolation ON {$table}
                 FOR ALL
                 USING (
-                    tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                    tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 )
                 WITH CHECK (
-                    tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                    tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 )
             SQL);
         }
@@ -49,13 +49,13 @@ return new class extends Migration
                 CREATE POLICY {$table}_mac_isolation ON {$table}
                 FOR ALL
                 USING (
-                    tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                    tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                     AND EXISTS (
                         SELECT 1 FROM documents d WHERE d.id = {$table}.document_id
                     )
                 )
                 WITH CHECK (
-                    tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                    tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 )
             SQL);
         }
@@ -66,13 +66,13 @@ return new class extends Migration
             CREATE POLICY signature_requests_envelope_mac ON signature_requests
             FOR ALL
             USING (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 AND EXISTS (
                     SELECT 1 FROM signature_envelopes se WHERE se.id = signature_requests.envelope_id
                 )
             )
             WITH CHECK (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
             )
         SQL);
     }

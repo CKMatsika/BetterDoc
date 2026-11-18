@@ -48,7 +48,7 @@ class PadesSignerService
         ?string $drawnSvgPath = null,
     ): DocumentVersion {
         $inPath = $this->decryptVersionToTempFile($sourceVersion);
-        $outPath = tempnam(sys_get_temp_dir(), 'sentinel_t1_out_');
+        $outPath = tempnam(sys_get_temp_dir(), 'betterdoc_t1_out_');
         if ($outPath === false) {
             @unlink($inPath);
             throw new RuntimeException('Unable to allocate temporary PDF output path.');
@@ -109,7 +109,7 @@ class PadesSignerService
         $ocspDer = $this->ca->buildOcspResponseDer($tenant, $userCert->serial_number);
 
         $inPath = $this->decryptVersionToTempFile($sourceVersion);
-        $outPath = tempnam(sys_get_temp_dir(), 'sentinel_pades_out_');
+        $outPath = tempnam(sys_get_temp_dir(), 'betterdoc_pades_out_');
         if ($outPath === false) {
             sodium_memzero($signerKeyPem);
             sodium_memzero($tsaKeyPem);
@@ -229,7 +229,7 @@ class PadesSignerService
         $crlDer = $this->ca->latestCrlDer($tenant);
         $ocspDer = $this->ca->buildOcspResponseDer($tenant, $userCert->serial_number);
 
-        $outPath = tempnam(sys_get_temp_dir(), 'sentinel_ext_out_');
+        $outPath = tempnam(sys_get_temp_dir(), 'betterdoc_ext_out_');
         if ($outPath === false) {
             sodium_memzero($tsaKeyPem);
             throw new RuntimeException('Unable to allocate external signature output file.');
@@ -297,8 +297,8 @@ class PadesSignerService
         $crlDer = $this->ca->latestCrlDer($tenant);
 
         $inPath = $this->decryptVersionToTempFile($workingVersion);
-        $sealedOut = tempnam(sys_get_temp_dir(), 'sentinel_sealed_');
-        $certOut = tempnam(sys_get_temp_dir(), 'sentinel_cert_');
+        $sealedOut = tempnam(sys_get_temp_dir(), 'betterdoc_sealed_');
+        $certOut = tempnam(sys_get_temp_dir(), 'betterdoc_cert_');
         if ($sealedOut === false || $certOut === false) {
             sodium_memzero($sealKeyPem);
             sodium_memzero($tsaKeyPem);
@@ -307,7 +307,7 @@ class PadesSignerService
         }
 
         try {
-            $verifyUrl = rtrim(config()->string('app.url', 'https://sentinel.lan'), '/')."/verify/{$envelope->verification_token}";
+            $verifyUrl = rtrim(config()->string('app.url', 'https://betterdoc.lan'), '/')."/verify/{$envelope->verification_token}";
 
             $this->bridge->execute('seal_envelope', [
                 'input_pdf_path' => $inPath,
@@ -335,7 +335,7 @@ class PadesSignerService
             );
 
             $certStorageKey = "tenants/{$tenant->id}/envelopes/{$envelope->id}/certificate.enc";
-            $certEnc = $this->crypto->encryptFileToDisk($certOut, 'sentinel_vault', $certStorageKey);
+            $certEnc = $this->crypto->encryptFileToDisk($certOut, 'betterdoc_vault', $certStorageKey);
 
             $envelope->update([
                 'sealed_version_id' => $sealedVersion->id,
@@ -419,7 +419,7 @@ class PadesSignerService
         }
 
         $tempVersion = new DocumentVersion([
-            'storage_disk' => 'sentinel_vault',
+            'storage_disk' => 'betterdoc_vault',
             'storage_key' => $envelope->certificate_storage_key,
             'wrapped_dek' => $envelope->certificate_wrapped_dek,
             'kek_key_id' => $envelope->certificate_kek_key_id,
@@ -487,7 +487,7 @@ class PadesSignerService
                 : 0;
 
             $storageKey = "tenants/{$document->tenant_id}/docs/{$document->id}/v{$major}_{$minor}_{$verId}.enc";
-            $enc = $this->crypto->encryptFileToDisk($signedPdfPath, 'sentinel_vault', $storageKey);
+            $enc = $this->crypto->encryptFileToDisk($signedPdfPath, 'betterdoc_vault', $storageKey);
 
             DocumentVersion::query()
                 ->where('document_id', $document->id)
@@ -502,7 +502,7 @@ class PadesSignerService
                 'version_major' => $major,
                 'version_minor' => $minor,
                 'is_current' => true,
-                'storage_disk' => 'sentinel_vault',
+                'storage_disk' => 'betterdoc_vault',
                 'storage_key' => $storageKey,
                 'original_filename' => $sourceVersion->original_filename,
                 'mime_type' => 'application/pdf',
@@ -529,7 +529,7 @@ class PadesSignerService
     private function decryptVersionToTempFile(DocumentVersion $version): string
     {
         $handle = $this->crypto->decryptVersionToTempHandle($version);
-        $tmpPath = tempnam(sys_get_temp_dir(), 'sentinel_pdf_in_');
+        $tmpPath = tempnam(sys_get_temp_dir(), 'betterdoc_pdf_in_');
         if ($tmpPath === false) {
             fclose($handle);
             throw new RuntimeException('Unable to allocate temp PDF input file.');

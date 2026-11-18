@@ -122,9 +122,9 @@ it('filters @mentions by MAC clearance BEFORE generating notifications or Reverb
     config()->set('broadcasting.default', 'reverb');
     config()->set('broadcasting.connections.reverb', [
         'driver' => 'reverb',
-        'key' => 'sentinel-test-key',
-        'secret' => 'sentinel-test-secret',
-        'app_id' => 'sentinel-test',
+        'key' => 'betterdoc-test-key',
+        'secret' => 'betterdoc-test-secret',
+        'app_id' => 'betterdoc-test',
         'options' => ['host' => '127.0.0.1', 'port' => 8081, 'scheme' => 'http', 'useTLS' => false],
     ]);
     Broadcast::purge();

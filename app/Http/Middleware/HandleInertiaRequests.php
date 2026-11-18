@@ -54,7 +54,7 @@ class HandleInertiaRequests extends Middleware
                 ->whereNull('revoked_at')
                 ->first();
 
-            $stepUpTtl = config()->integer('sentinel.security.step_up_mfa_ttl_minutes', 5);
+            $stepUpTtl = config()->integer('betterdoc.security.step_up_mfa_ttl_minutes', 5);
 
             $authPayload = [
                 'user' => [
@@ -148,12 +148,12 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'app' => [
-                'name' => config('app.name', 'SENTINEL DMS'),
-                'air_gapped' => (bool) config('sentinel.air_gapped', true),
-                'demo_switcher_enabled' => (bool) config('sentinel.demo_switcher_enabled', false),
+                'name' => config('app.name', 'BetterDoc DMS'),
+                'air_gapped' => (bool) config('betterdoc.air_gapped', true),
+                'demo_switcher_enabled' => (bool) config('betterdoc.demo_switcher_enabled', false),
                 'reverb' => [
                     'enabled' => config('broadcasting.default') === 'reverb',
-                    'key' => config()->string('broadcasting.connections.reverb.key', 'sentinel-lan-key'),
+                    'key' => config()->string('broadcasting.connections.reverb.key', 'betterdoc-lan-key'),
                     'host' => config()->string('broadcasting.connections.reverb.options.host', '127.0.0.1'),
                     'port' => config()->integer('broadcasting.connections.reverb.options.port', 8081),
                     'scheme' => config()->string('broadcasting.connections.reverb.options.scheme', 'http'),

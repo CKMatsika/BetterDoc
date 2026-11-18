@@ -167,7 +167,7 @@ class HybridRagService
                 'title' => mb_substr($trimmedQuery, 0, 120),
                 'high_water_rank' => $maxRank,
                 'high_water_compartments' => $unionCompartments,
-                'model_name' => config()->string('sentinel.ai.chat_model', 'qwen2.5:7b-instruct'),
+                'model_name' => config()->string('betterdoc.ai.chat_model', 'qwen2.5:7b-instruct'),
             ]);
 
             // Ratchet session high-water-mark strictly upward (never downgrade)
@@ -191,13 +191,13 @@ class HybridRagService
             $answerText = $this->synthesizeGroundedAnswer($trimmedQuery, $topHits);
             $usedModel = $queryEmbed['model'];
 
-            if ($topHits !== [] && config()->string('sentinel.ai.driver', 'local_hybrid') === 'ollama') {
+            if ($topHits !== [] && config()->string('betterdoc.ai.driver', 'local_hybrid') === 'ollama') {
                 $contextBlock = '';
                 foreach ($topHits as $h) {
                     $contextBlock .= "[{$h['document']->doc_number} — {$h['document']->title}]\n{$h['chunk']->content_text}\n\n";
                 }
                 $llmRes = $this->ai->generateText(
-                    'You are SENTINEL DMS Offline Assistant. Answer ONLY using the provided cleared document excerpts and cite exact doc_numbers. If context lacks an answer, state so.',
+                    'You are BetterDoc DMS Offline Assistant. Answer ONLY using the provided cleared document excerpts and cite exact doc_numbers. If context lacks an answer, state so.',
                     "Question: {$trimmedQuery}\n\nCleared Context:\n{$contextBlock}"
                 );
                 if ($llmRes['text'] !== null) {

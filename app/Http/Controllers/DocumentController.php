@@ -322,7 +322,7 @@ class DocumentController extends Controller
         }
 
         $qrWriter = new Writer(new ImageRenderer(new RendererStyle(128), new SvgImageBackEnd));
-        $baseUrl = rtrim(config()->string('app.url', 'https://sentinel.lan'), '/');
+        $baseUrl = rtrim(config()->string('app.url', 'https://betterdoc.lan'), '/');
 
         $envelopesPayload = $document->signatureEnvelopes->map(static function (SignatureEnvelope $env) use ($user, $qrWriter, $baseUrl): array {
             $verifyUrl = "{$baseUrl}/verify/{$env->verification_token}";

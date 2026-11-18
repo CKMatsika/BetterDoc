@@ -2,11 +2,11 @@
 services:
   app:
     environment:
-      SENTINEL_AIR_GAPPED: "true"
-      SENTINEL_HOSTING_MODE: "air_gapped_on_prem"
+      BETTERDOC_AIR_GAPPED: "true"
+      BETTERDOC_HOSTING_MODE: "air_gapped_on_prem"
   horizon:
     environment:
-      SENTINEL_AIR_GAPPED: "true"
+      BETTERDOC_AIR_GAPPED: "true"
   clamav:
     environment:
       CLAMAV_NO_FRESHCLAM: "true"

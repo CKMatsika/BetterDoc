@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Security;
 
+use App\Enums\BetterDocRole;
 use App\Enums\PrincipalType;
-use App\Enums\SentinelRole;
 use App\Enums\UserStatus;
 use App\Enums\WriteDownMode;
 use App\Exceptions\InsufficientClearanceException;
@@ -103,7 +103,7 @@ class ClearancePolicyEngine
                 return PolicyDecision::allow('org_unit_hierarchy');
             }
 
-            if ($user->hasRole([SentinelRole::RecordsOfficer->value, SentinelRole::Approver->value])) {
+            if ($user->hasRole([BetterDocRole::RecordsOfficer->value, BetterDocRole::Approver->value])) {
                 if ($this->isUserInAncestorUnit($user, $document)) {
                     return PolicyDecision::allow('unit_officer_scope');
                 }
@@ -117,7 +117,7 @@ class ClearancePolicyEngine
                 return PolicyDecision::denyForbidden('document_is_worm_locked');
             }
 
-            if ($user->hasRole(SentinelRole::Reader->value) && ! $user->hasAnyRole([SentinelRole::Author->value, SentinelRole::RecordsOfficer->value, SentinelRole::Approver->value])) {
+            if ($user->hasRole(BetterDocRole::Reader->value) && ! $user->hasAnyRole([BetterDocRole::Author->value, BetterDocRole::RecordsOfficer->value, BetterDocRole::Approver->value])) {
                 return PolicyDecision::denyForbidden('reader_cannot_edit');
             }
 
@@ -125,7 +125,7 @@ class ClearancePolicyEngine
                 return PolicyDecision::allow('edit_authorized');
             }
 
-            if ($user->hasRole(SentinelRole::RecordsOfficer->value) && $this->isUserInAncestorUnit($user, $document)) {
+            if ($user->hasRole(BetterDocRole::RecordsOfficer->value) && $this->isUserInAncestorUnit($user, $document)) {
                 return PolicyDecision::allow('records_officer_edit');
             }
 
@@ -137,7 +137,7 @@ class ClearancePolicyEngine
                 return PolicyDecision::allow('share_authorized');
             }
 
-            if ($user->hasRole(SentinelRole::RecordsOfficer->value) && $this->isUserInAncestorUnit($user, $document)) {
+            if ($user->hasRole(BetterDocRole::RecordsOfficer->value) && $this->isUserInAncestorUnit($user, $document)) {
                 return PolicyDecision::allow('records_officer_share');
             }
 
@@ -146,7 +146,7 @@ class ClearancePolicyEngine
 
         if (in_array($action, ['download', 'print', 'sign'], true)) {
             $permCol = 'perm_'.$action;
-            if ($document->owner_id === $user->id && ! $user->hasRole(SentinelRole::Reader->value)) {
+            if ($document->owner_id === $user->id && ! $user->hasRole(BetterDocRole::Reader->value)) {
                 return PolicyDecision::allow('owner_'.$action);
             }
 
@@ -154,7 +154,7 @@ class ClearancePolicyEngine
                 return PolicyDecision::allow('grant_'.$action);
             }
 
-            if ($user->hasRole(SentinelRole::RecordsOfficer->value) && $this->isUserInAncestorUnit($user, $document)) {
+            if ($user->hasRole(BetterDocRole::RecordsOfficer->value) && $this->isUserInAncestorUnit($user, $document)) {
                 return PolicyDecision::allow('records_officer_'.$action);
             }
 
@@ -166,7 +166,7 @@ class ClearancePolicyEngine
                 return PolicyDecision::denyForbidden('legal_hold_or_worm_active');
             }
 
-            if (! $user->hasAnyRole([SentinelRole::RecordsOfficer->value, SentinelRole::Approver->value])) {
+            if (! $user->hasAnyRole([BetterDocRole::RecordsOfficer->value, BetterDocRole::Approver->value])) {
                 return PolicyDecision::denyForbidden('insufficient_role_for_'.$action);
             }
 

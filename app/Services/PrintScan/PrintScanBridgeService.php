@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\PrintScan;
 
 use App\Services\Pki\SignerBridgeService;
-use App\Services\Security\SentinelHttpClientGuard;
+use App\Services\Security\BetterDocHttpClientGuard;
 use Illuminate\Support\Facades\Http;
 use Psr\Http\Message\RequestInterface;
 use RuntimeException;
@@ -14,13 +14,13 @@ class PrintScanBridgeService
 {
     public function __construct(
         private readonly SignerBridgeService $signerBridge,
-        private readonly SentinelHttpClientGuard $guard,
+        private readonly BetterDocHttpClientGuard $guard,
     ) {}
 
     public function watermarkPdf(string $pdfBytes, string $watermarkText, string $classificationBanner): string
     {
-        if (config()->string('sentinel.pki.signer_driver', 'local_pyhanko') === 'http') {
-            $baseUrl = rtrim(config()->string('sentinel.pki.signer_url', 'http://sentinel-signer:8003'), '/');
+        if (config()->string('betterdoc.pki.signer_driver', 'local_pyhanko') === 'http') {
+            $baseUrl = rtrim(config()->string('betterdoc.pki.signer_url', 'http://betterdoc-signer:8003'), '/');
             $resp = Http::withRequestMiddleware(
                 fn (RequestInterface $req): RequestInterface => $this->guard->assertOutboundAllowed($req)
             )->timeout(30)->post("{$baseUrl}/print/watermark-pdf", [
@@ -71,8 +71,8 @@ class PrintScanBridgeService
         string $cabinetCode,
         string $classificationName,
     ): string {
-        if (config()->string('sentinel.pki.signer_driver', 'local_pyhanko') === 'http') {
-            $baseUrl = rtrim(config()->string('sentinel.pki.signer_url', 'http://sentinel-signer:8003'), '/');
+        if (config()->string('betterdoc.pki.signer_driver', 'local_pyhanko') === 'http') {
+            $baseUrl = rtrim(config()->string('betterdoc.pki.signer_url', 'http://betterdoc-signer:8003'), '/');
             $resp = Http::withRequestMiddleware(
                 fn (RequestInterface $req): RequestInterface => $this->guard->assertOutboundAllowed($req)
             )->timeout(30)->post("{$baseUrl}/scan/separator-pdf", [

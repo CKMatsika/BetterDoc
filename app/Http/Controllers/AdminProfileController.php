@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\BetterDocRole;
 use App\Enums\ProfileCode;
-use App\Enums\SentinelRole;
 use App\Models\ClearanceLevel;
 use App\Models\Compartment;
 use App\Models\User;
@@ -46,7 +46,7 @@ class AdminProfileController extends Controller
                 ->orderBy('code')
                 ->get()
                 ->toArray(),
-            'canSwitchProfile' => $user->hasRole(SentinelRole::SystemAdmin->value),
+            'canSwitchProfile' => $user->hasRole(BetterDocRole::SystemAdmin->value),
         ]);
     }
 
@@ -56,7 +56,7 @@ class AdminProfileController extends Controller
         $user = $request->user();
         app(PermissionRegistrar::class)->setPermissionsTeamId($user->tenant_id);
 
-        abort_unless($user->hasRole(SentinelRole::SystemAdmin->value), 403);
+        abort_unless($user->hasRole(BetterDocRole::SystemAdmin->value), 403);
 
         /** @var array{profile_code: string} $validated */
         $validated = $request->validate([

@@ -28,11 +28,11 @@ class MfaController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $rawPending = $request->session()->get('sentinel_mfa_pending_secret');
+        $rawPending = $request->session()->get('betterdoc_mfa_pending_secret');
         $pendingSecret = is_string($rawPending) ? $rawPending : '';
         if ($pendingSecret === '') {
             $pendingSecret = $this->totp->generateSecret();
-            $request->session()->put('sentinel_mfa_pending_secret', $pendingSecret);
+            $request->session()->put('betterdoc_mfa_pending_secret', $pendingSecret);
         }
 
         $qrSvg = $this->totp->provisionSvgQrCode($user, $pendingSecret);
@@ -54,7 +54,7 @@ class MfaController extends Controller
             'code' => ['required', 'string', 'min:6', 'max:12'],
         ]);
 
-        $rawPending = $request->session()->get('sentinel_mfa_pending_secret');
+        $rawPending = $request->session()->get('betterdoc_mfa_pending_secret');
         $pendingSecret = is_string($rawPending) ? $rawPending : '';
         if ($pendingSecret === '' || ! $this->totp->verifyCode($pendingSecret, $validated['code'], isEncrypted: false)) {
             throw ValidationException::withMessages([
@@ -70,7 +70,7 @@ class MfaController extends Controller
             'two_factor_confirmed_at' => now(),
         ])->save();
 
-        $request->session()->forget('sentinel_mfa_pending_secret');
+        $request->session()->forget('betterdoc_mfa_pending_secret');
 
         UserSession::query()
             ->where('user_id', $user->id)

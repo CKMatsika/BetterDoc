@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\BetterDocRole;
 use App\Enums\DispositionAction;
 use App\Enums\RetentionTrigger;
-use App\Enums\SentinelRole;
 use App\Enums\TwoPersonActionType;
 use App\Models\ClearanceLevel;
 use App\Models\DispositionReview;
@@ -99,7 +99,7 @@ class GovernanceController extends Controller
             ->values()
             ->all();
 
-        $users = $user->hasRole(SentinelRole::SystemAdmin->value)
+        $users = $user->hasRole(BetterDocRole::SystemAdmin->value)
             ? User::query()
                 ->with(['clearanceLevel', 'compartments'])
                 ->where('tenant_id', $user->tenant_id)
@@ -130,8 +130,8 @@ class GovernanceController extends Controller
             'dispositionReviews' => $reviews,
             'managedUsers' => $users,
             'clearanceLevels' => $clearanceLevels,
-            'canManageGovernance' => $user->hasAnyRole([SentinelRole::RecordsOfficer->value, SentinelRole::SystemAdmin->value]),
-            'isSystemAdmin' => $user->hasRole(SentinelRole::SystemAdmin->value),
+            'canManageGovernance' => $user->hasAnyRole([BetterDocRole::RecordsOfficer->value, BetterDocRole::SystemAdmin->value]),
+            'isSystemAdmin' => $user->hasRole(BetterDocRole::SystemAdmin->value),
         ]);
     }
 
@@ -139,7 +139,7 @@ class GovernanceController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        abort_unless($user->hasAnyRole([SentinelRole::RecordsOfficer->value, SentinelRole::SystemAdmin->value]), 403);
+        abort_unless($user->hasAnyRole([BetterDocRole::RecordsOfficer->value, BetterDocRole::SystemAdmin->value]), 403);
 
         /** @var array{code: string, name: string, trigger_event: string, retention_days: int, disposition_action: string, description?: string|null} $validated */
         $validated = $request->validate([
@@ -192,7 +192,7 @@ class GovernanceController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        abort_unless($user->hasAnyRole([SentinelRole::RecordsOfficer->value, SentinelRole::Approver->value]), 403);
+        abort_unless($user->hasAnyRole([BetterDocRole::RecordsOfficer->value, BetterDocRole::Approver->value]), 403);
         Gate::authorize('view', $document);
 
         /** @var array{active: bool, reason: string} $validated */
@@ -210,7 +210,7 @@ class GovernanceController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        abort_unless($user->hasAnyRole([SentinelRole::RecordsOfficer->value, SentinelRole::Approver->value]), 403);
+        abort_unless($user->hasAnyRole([BetterDocRole::RecordsOfficer->value, BetterDocRole::Approver->value]), 403);
         Gate::authorize('update', $document);
 
         $this->governance->applyWormLock($document, $user, null, $request);
@@ -222,7 +222,7 @@ class GovernanceController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        abort_unless($user->hasAnyRole([SentinelRole::RecordsOfficer->value, SentinelRole::Approver->value]), 403);
+        abort_unless($user->hasAnyRole([BetterDocRole::RecordsOfficer->value, BetterDocRole::Approver->value]), 403);
         Gate::authorize('view', $document);
 
         /** @var array{action: string, notes: string} $validated */
@@ -253,7 +253,7 @@ class GovernanceController extends Controller
     {
         /** @var User $actor */
         $actor = $request->user();
-        abort_unless($actor->hasRole(SentinelRole::SystemAdmin->value) && $targetUser->tenant_id === $actor->tenant_id, 403);
+        abort_unless($actor->hasRole(BetterDocRole::SystemAdmin->value) && $targetUser->tenant_id === $actor->tenant_id, 403);
 
         /** @var array{clearance_level_id: string, reason: string} $validated */
         $validated = $request->validate([

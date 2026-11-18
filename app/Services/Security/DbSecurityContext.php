@@ -48,14 +48,14 @@ class DbSecurityContext
 
         // Set tenant/user context first so RLS-protected break_glass_sessions query resolves for this tenant
         $baseVars = [
-            'sentinel.tenant_id' => $user->tenant_id,
-            'sentinel.user_id' => $user->id,
-            'sentinel.clearance_rank' => (string) $user->clearance_rank,
-            'sentinel.compartment_ids' => $compartmentIds,
-            'sentinel.org_unit_path' => $user->orgUnit !== null ? $user->orgUnit->path : '',
-            'sentinel.ancestor_unit_ids' => $ancestorUnitIds,
-            'sentinel.role_ids' => $roleIds,
-            'sentinel.break_glass_doc_ids' => '',
+            'betterdoc.tenant_id' => $user->tenant_id,
+            'betterdoc.user_id' => $user->id,
+            'betterdoc.clearance_rank' => (string) $user->clearance_rank,
+            'betterdoc.compartment_ids' => $compartmentIds,
+            'betterdoc.org_unit_path' => $user->orgUnit !== null ? $user->orgUnit->path : '',
+            'betterdoc.ancestor_unit_ids' => $ancestorUnitIds,
+            'betterdoc.role_ids' => $roleIds,
+            'betterdoc.break_glass_doc_ids' => '',
         ];
 
         $this->setVariables($baseVars, $connectionName);
@@ -78,7 +78,7 @@ class DbSecurityContext
         $breakGlassIds = implode(',', $bgList);
 
         if ($breakGlassIds !== '') {
-            $baseVars['sentinel.break_glass_doc_ids'] = $breakGlassIds;
+            $baseVars['betterdoc.break_glass_doc_ids'] = $breakGlassIds;
             $this->setVariables($baseVars, $connectionName);
         }
     }
@@ -94,14 +94,14 @@ class DbSecurityContext
         }
 
         $this->writeVarsToConnection([
-            'sentinel.tenant_id' => '',
-            'sentinel.user_id' => '',
-            'sentinel.clearance_rank' => '-1',
-            'sentinel.compartment_ids' => '',
-            'sentinel.org_unit_path' => '',
-            'sentinel.ancestor_unit_ids' => '',
-            'sentinel.role_ids' => '',
-            'sentinel.break_glass_doc_ids' => '',
+            'betterdoc.tenant_id' => '',
+            'betterdoc.user_id' => '',
+            'betterdoc.clearance_rank' => '-1',
+            'betterdoc.compartment_ids' => '',
+            'betterdoc.org_unit_path' => '',
+            'betterdoc.ancestor_unit_ids' => '',
+            'betterdoc.role_ids' => '',
+            'betterdoc.break_glass_doc_ids' => '',
         ], $connectionName);
     }
 
@@ -158,7 +158,7 @@ class DbSecurityContext
             $this->contextStack[] = $previous;
         }
 
-        $this->setVariables(['sentinel.tenant_id' => $tenantId], $connectionName);
+        $this->setVariables(['betterdoc.tenant_id' => $tenantId], $connectionName);
 
         try {
             return $callback();

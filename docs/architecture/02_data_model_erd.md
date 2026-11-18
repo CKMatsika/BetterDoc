@@ -1,6 +1,6 @@
-# SENTINEL DMS — Data Model & Entity-Relationship Design
+# BetterDoc DMS — Data Model & Entity-Relationship Design
 
-**Document ID:** `SENTINEL-ERD-002`  
+**Document ID:** `BetterDoc-ERD-002`  
 **Database Engine:** PostgreSQL 17 (`pgvector 0.8+`, `ltree`, `pgcrypto`, native declarative range partitioning)  
 **Primary Key Strategy:** Time-ordered **UUIDv7** across application entities (`BIGINT GENERATED ALWAYS AS IDENTITY` sequence for strict monotonic `audit_events` hash chaining).
 
@@ -448,13 +448,13 @@ On every authenticated HTTP request or Horizon worker job, Laravel starts/wraps 
 
 ```sql
 -- Executed inside transaction scope via DbSecurityContext middleware
-SET LOCAL sentinel.tenant_id = '01933a10-...';
-SET LOCAL sentinel.user_id = '01933a12-...';
-SET LOCAL sentinel.clearance_rank = '2'; -- e.g. Confidential
-SET LOCAL sentinel.compartments = 'OPS,FIN'; -- Comma-separated active user compartments
-SET LOCAL sentinel.org_unit_path = 'afz.hq.ops';
-SET LOCAL sentinel.is_auditor = 'false';
-SET LOCAL sentinel.break_glass_doc_ids = ''; -- Approved active break-glass UUIDs only
+SET LOCAL betterdoc.tenant_id = '01933a10-...';
+SET LOCAL betterdoc.user_id = '01933a12-...';
+SET LOCAL betterdoc.clearance_rank = '2'; -- e.g. Confidential
+SET LOCAL betterdoc.compartments = 'OPS,FIN'; -- Comma-separated active user compartments
+SET LOCAL betterdoc.org_unit_path = 'afz.hq.ops';
+SET LOCAL betterdoc.is_auditor = 'false';
+SET LOCAL betterdoc.break_glass_doc_ids = ''; -- Approved active break-glass UUIDs only
 ```
 
 ### 3.2 Mandatory RLS Policy on `documents` & `document_chunks`
@@ -467,40 +467,40 @@ ALTER TABLE documents FORCE ROW LEVEL SECURITY;
 CREATE POLICY documents_mac_abac_select ON documents
 FOR SELECT
 USING (
-    tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+    tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
     AND deleted_at IS NULL
     AND (
         -- Emergency break-glass override (time-bounded & dual-approved)
-        id = ANY(string_to_array(NULLIF(current_setting('sentinel.break_glass_doc_ids', true), ''), ',')::uuid[])
+        id = ANY(string_to_array(NULLIF(current_setting('betterdoc.break_glass_doc_ids', true), ''), ',')::uuid[])
         OR (
             -- 1. Mandatory Access Control (Bell-LaPadula No-Read-Up)
-            classification_rank <= COALESCE(NULLIF(current_setting('sentinel.clearance_rank', true), '')::int, -1)
+            classification_rank <= COALESCE(NULLIF(current_setting('betterdoc.clearance_rank', true), '')::int, -1)
             -- 2. Compartment Superset Check (every doc compartment must be in user's compartments)
             AND NOT EXISTS (
                 SELECT 1 FROM document_compartments dc
                 WHERE dc.document_id = documents.id
                   AND dc.compartment_id <> ALL(
-                      string_to_array(NULLIF(current_setting('sentinel.compartment_ids', true), ''), ',')::uuid[]
+                      string_to_array(NULLIF(current_setting('betterdoc.compartment_ids', true), ''), ',')::uuid[]
                   )
             )
             -- 3. Explicit Grant / Ownership / Org-Unit Hierarchy / HR Subject Shield
             AND (
-                owner_id = NULLIF(current_setting('sentinel.user_id', true), '')::uuid
+                owner_id = NULLIF(current_setting('betterdoc.user_id', true), '')::uuid
                 OR EXISTS (
                     SELECT 1 FROM document_acl_grants g
                     WHERE g.document_id = documents.id
                       AND g.perm_view = true
                       AND (g.expires_at IS NULL OR g.expires_at > now())
                       AND (
-                          (g.principal_type = 'user' AND g.principal_id = NULLIF(current_setting('sentinel.user_id', true), '')::uuid)
-                          OR (g.principal_type = 'org_unit' AND g.principal_id = ANY(string_to_array(current_setting('sentinel.ancestor_unit_ids', true), ',')::uuid[]))
-                          OR (g.principal_type = 'role' AND g.principal_id = ANY(string_to_array(current_setting('sentinel.role_ids', true), ',')::uuid[]))
+                          (g.principal_type = 'user' AND g.principal_id = NULLIF(current_setting('betterdoc.user_id', true), '')::uuid)
+                          OR (g.principal_type = 'org_unit' AND g.principal_id = ANY(string_to_array(current_setting('betterdoc.ancestor_unit_ids', true), ',')::uuid[]))
+                          OR (g.principal_type = 'role' AND g.principal_id = ANY(string_to_array(current_setting('betterdoc.role_ids', true), ',')::uuid[]))
                       )
                 )
                 OR EXISTS (
                     SELECT 1 FROM org_units ou
                     WHERE ou.id = documents.org_unit_id
-                      AND ou.path <@ NULLIF(current_setting('sentinel.org_unit_path', true), '')::ltree
+                      AND ou.path <@ NULLIF(current_setting('betterdoc.org_unit_path', true), '')::ltree
                       AND documents.unit_wide_readable = true
                 )
             )
@@ -509,7 +509,7 @@ USING (
                 SELECT 1 FROM hr_employee_files hr
                 WHERE hr.document_id = documents.id
                   AND hr.restricted_from_subject = true
-                  AND hr.user_id = NULLIF(current_setting('sentinel.user_id', true), '')::uuid
+                  AND hr.user_id = NULLIF(current_setting('betterdoc.user_id', true), '')::uuid
             )
         )
     )
@@ -529,7 +529,7 @@ USING (
 2. **100k-Document Search & Query Budget (< 1 second):**
    - `documents` indexed on `(tenant_id, classification_rank, folder_id, deleted_at)`, GIN index on `metadata_jsonb`, `ltree` GiST index on `org_units.path`.
    - `document_chunks` uses `pgvector` **HNSW** (`m = 16, ef_construction = 64`, `vector_cosine_ops`) with `SET LOCAL hnsw.iterative_scan = strict_order` so top-K RAG retrieval returns cleared matches cleanly even for low-clearance users.
-   - **Meilisearch Index (`sentinel_documents`):** Indexed fields: `id`, `tenant_id`, `title`, `doc_number`, `ocr_text`, `tags`, `metadata_flat`. Filterable fields: `classification_rank`, `required_compartments`, `acl_principals`, `org_unit_ancestors`, `status`, `doc_type`, `created_at_ts`. Target P95 query latency at 100k docs: **< 45ms**.
+   - **Meilisearch Index (`betterdoc_documents`):** Indexed fields: `id`, `tenant_id`, `title`, `doc_number`, `ocr_text`, `tags`, `metadata_flat`. Filterable fields: `classification_rank`, `required_compartments`, `acl_principals`, `org_unit_ancestors`, `status`, `doc_type`, `created_at_ts`. Target P95 query latency at 100k docs: **< 45ms**.
 
 ---
 
@@ -537,9 +537,9 @@ USING (
 
 | Bucket | Object Lock (WORM) | Purpose | Encryption |
 | :--- | :--- | :--- | :--- |
-| `sentinel-quarantine` | Off (7d lifecycle cleanup) | Raw incoming uploads prior to ClamAV & CDR | Server-side SSE-KMS (local KMS) |
-| `sentinel-vault` | Governance / Compliance Mode (per retention policy) | Verified clean documents, PDF/A versions, sealed signed PDFs | **Per-Document DEK (AES-256-GCM)** wrapped by HSM Master KEK |
-| `sentinel-thumbnails` | Off | Encrypted rasterized page thumbnails (streamed only after doc RLS check) | Per-Document DEK |
-| `sentinel-backups` | Compliance Mode | Encrypted `pg_basebackup` / WAL archives & MinIO mirror bundles | Offline Backup Public Key (Age/Libsodium) |
+| `betterdoc-quarantine` | Off (7d lifecycle cleanup) | Raw incoming uploads prior to ClamAV & CDR | Server-side SSE-KMS (local KMS) |
+| `betterdoc-vault` | Governance / Compliance Mode (per retention policy) | Verified clean documents, PDF/A versions, sealed signed PDFs | **Per-Document DEK (AES-256-GCM)** wrapped by HSM Master KEK |
+| `betterdoc-thumbnails` | Off | Encrypted rasterized page thumbnails (streamed only after doc RLS check) | Per-Document DEK |
+| `betterdoc-backups` | Compliance Mode | Encrypted `pg_basebackup` / WAL archives & MinIO mirror bundles | Offline Backup Public Key (Age/Libsodium) |
 
 - **Object Key Format:** `tenants/{tenant_id}/docs/{doc_uuid}/v{major}_{minor}_{version_uuid}.enc` (no document title or classification leaked into filesystem/object paths!).

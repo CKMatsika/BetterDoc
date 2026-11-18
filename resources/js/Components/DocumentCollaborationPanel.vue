@@ -2,8 +2,8 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import { CheckCircle2, Eraser, MessageSquare, Radio, ShieldAlert, Trash2 } from '@lucide/vue';
-import { SentinelReverbClient, type PresenceMember } from '@/lib/reverbClient';
-import type { DocumentAnnotationItem, DocumentCommentItem, SharedProps } from '@/types/sentinel';
+import { BetterDocReverbClient, type PresenceMember } from '@/lib/reverbClient';
+import type { DocumentAnnotationItem, DocumentCommentItem, SharedProps } from '@/types/betterdoc';
 
 const props = defineProps<{
     documentId: string;
@@ -19,7 +19,7 @@ const page = usePage<{ props: SharedProps }>();
 const shared = computed(() => page.props as unknown as SharedProps);
 
 const presenceMembers = ref<PresenceMember[]>([]);
-let reverbClient: SentinelReverbClient | null = null;
+let reverbClient: BetterDocReverbClient | null = null;
 
 const commentForm = useForm({
     body: '',
@@ -67,12 +67,12 @@ function deleteAnnotation(id: string): void {
 onMounted(() => {
     const revCfg = shared.value.app.reverb;
     if (revCfg?.enabled) {
-        reverbClient = new SentinelReverbClient(revCfg);
+        reverbClient = new BetterDocReverbClient(revCfg);
         reverbClient.connect();
         reverbClient.subscribe(
             `presence-document.${props.documentId}`,
             (eventName) => {
-                if (eventName === 'sentinel.document.activity') {
+                if (eventName === 'betterdoc.document.activity') {
                     router.reload({ only: ['comments', 'annotations', 'document'] });
                 }
             },

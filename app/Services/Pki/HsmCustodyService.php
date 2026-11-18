@@ -12,7 +12,7 @@ use RuntimeException;
  *
  * Ensures private signing keys never exist in PostgreSQL or in plaintext on disk.
  * When `hsm_driver=sealed_file` (dev/standalone LAN), keys are authenticated-encrypted
- * using XChaCha20-Poly1305 with a dedicated HKDF subkey derived from SENTINEL's Master KEK.
+ * using XChaCha20-Poly1305 with a dedicated HKDF subkey derived from BetterDoc's Master KEK.
  */
 class HsmCustodyService
 {
@@ -69,7 +69,7 @@ class HsmCustodyService
 
     public function crlPath(string $tenantId): string
     {
-        $base = rtrim(config()->string('sentinel.pki.hsm_path', storage_path('app/hsm')), DIRECTORY_SEPARATOR);
+        $base = rtrim(config()->string('betterdoc.pki.hsm_path', storage_path('app/hsm')), DIRECTORY_SEPARATOR);
         $safeTenant = preg_replace('/[^a-zA-Z0-9_-]/', '', $tenantId) ?? 'default';
 
         return $base.DIRECTORY_SEPARATOR.$safeTenant.DIRECTORY_SEPARATOR.'crl.der';
@@ -77,7 +77,7 @@ class HsmCustodyService
 
     private function keyPath(string $tenantId, string $keyLabel): string
     {
-        $base = rtrim(config()->string('sentinel.pki.hsm_path', storage_path('app/hsm')), DIRECTORY_SEPARATOR);
+        $base = rtrim(config()->string('betterdoc.pki.hsm_path', storage_path('app/hsm')), DIRECTORY_SEPARATOR);
         $safeTenant = preg_replace('/[^a-zA-Z0-9_-]/', '', $tenantId) ?? 'default';
         $safeLabel = preg_replace('/[^a-zA-Z0-9._-]/', '_', $keyLabel) ?? 'key';
 
@@ -86,11 +86,11 @@ class HsmCustodyService
 
     private function hsmWrappingKey(string $tenantId): string
     {
-        $masterB64 = config()->string('sentinel.security.master_kek_b64', '');
+        $masterB64 = config()->string('betterdoc.security.master_kek_b64', '');
         if ($masterB64 !== '') {
             $decoded = base64_decode($masterB64, true);
             if ($decoded !== false && strlen($decoded) >= 32) {
-                return hash_hkdf('sha256', $decoded, SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES, "sentinel-hsm|{$tenantId}");
+                return hash_hkdf('sha256', $decoded, SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES, "betterdoc-hsm|{$tenantId}");
             }
         }
 
@@ -99,6 +99,6 @@ class HsmCustodyService
             $appKey = base64_decode(substr($appKey, 7), true) ?: $appKey;
         }
 
-        return hash_hkdf('sha256', $appKey, SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES, "sentinel-hsm|{$tenantId}");
+        return hash_hkdf('sha256', $appKey, SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES, "betterdoc-hsm|{$tenantId}");
     }
 }

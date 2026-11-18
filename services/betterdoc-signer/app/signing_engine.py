@@ -1,4 +1,4 @@
-"""SENTINEL PAdES-B-LT/LTA PDF Signing, Certificate Sealing, and Verification Engine via pyHanko."""
+"""BetterDoc PAdES-B-LT/LTA PDF Signing, Certificate Sealing, and Verification Engine via pyHanko."""
 
 from __future__ import annotations
 
@@ -97,7 +97,7 @@ def apply_tier1_stamp(
 
     display_sig = typed_name or f"{rank_title} {signer_name}".strip()
     now_str = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    label = f"SENTINEL TIER-1 STAMP\n{display_sig}\n{reason[:46]}\n{now_str}"
+    label = f"BETTERDOC TIER-1 STAMP\n{display_sig}\n{reason[:46]}\n{now_str}"
     page.insert_textbox(fitz.Rect(rect.x0 + 6, rect.y0 + 4, rect.x1 - 6, rect.y1 - 4), label, fontsize=7.5, color=(0.05, 0.15, 0.35))
 
     out = doc.tobytes(deflate=True)
@@ -399,10 +399,10 @@ def seal_envelope_pdf_and_certificate(
     qr_img = _make_qr_pil(verify_url)
     writer = IncrementalPdfFileWriter(io.BytesIO(pdf_bytes), strict=False)
     seal_meta = signers.PdfSignatureMetadata(
-        field_name="Sentinel_Envelope_Seal",
-        reason=f"SENTINEL Sealed Multi-Party Envelope ({doc_number})",
-        location="SENTINEL DMS Local PKI",
-        name="SENTINEL Sealing Authority",
+        field_name="BetterDoc_Envelope_Seal",
+        reason=f"BetterDoc Sealed Multi-Party Envelope ({doc_number})",
+        location="BetterDoc DMS Local PKI",
+        name="BetterDoc Sealing Authority",
         md_algorithm="sha256",
         subfilter=SigSeedSubFilter.PADES,
         certify=False,
@@ -410,7 +410,7 @@ def seal_envelope_pdf_and_certificate(
         embed_validation_info=bool(crls_arg),
         use_pades_lta=True,
         validation_context=vc if crls_arg else None,
-        timestamp_field_name="Sentinel_Seal_LTA_TS",
+        timestamp_field_name="BetterDoc_Seal_LTA_TS",
     )
     seal_box = (max(16.0, pw - 216.0), 18.0, pw - 16.0, 74.0)
     seal_style = stamp.TextStampStyle(
@@ -424,7 +424,7 @@ def seal_envelope_pdf_and_certificate(
         signer=cms_signer,
         timestamper=timestamper,
         stamp_style=seal_style,
-        new_field_spec=SigFieldSpec(sig_field_name="Sentinel_Envelope_Seal", on_page=last_page_idx, box=seal_box),
+        new_field_spec=SigFieldSpec(sig_field_name="BetterDoc_Envelope_Seal", on_page=last_page_idx, box=seal_box),
     )
     sealed_buf = io.BytesIO()
     sealed_signer.sign_pdf(writer, output=sealed_buf)
@@ -436,7 +436,7 @@ def seal_envelope_pdf_and_certificate(
     page = cert_doc.new_page(width=595, height=842)
     page.draw_rect(fitz.Rect(24, 24, 571, 818), color=(0.06, 0.16, 0.32), width=1.5)
     page.draw_rect(fitz.Rect(24, 24, 571, 96), color=None, fill=(0.06, 0.16, 0.32))
-    page.insert_text((42, 54), "SENTINEL DMS — CERTIFICATE OF COMPLETION", fontsize=14, color=(1, 1, 1))
+    page.insert_text((42, 54), "BetterDoc DMS — CERTIFICATE OF COMPLETION", fontsize=14, color=(1, 1, 1))
     page.insert_text((42, 76), f"Envelope: {envelope_title[:68]} | Doc: {doc_number}", fontsize=9, color=(0.8, 0.9, 1))
 
     qr_buf = io.BytesIO()
@@ -475,11 +475,11 @@ def seal_envelope_pdf_and_certificate(
         tsa_key_pem=tsa_key_pem,
         crl_der=crl_der,
         ocsp_der=None,
-        field_name="Sentinel_Certificate_Seal",
+        field_name="BetterDoc_Certificate_Seal",
         coords={"page": 1, "x": 42, "y": 745, "width": 230, "height": 58},
-        signer_label="SENTINEL Certificate Authority",
+        signer_label="BetterDoc Certificate Authority",
         reason="Cryptographic Certificate of Completion Seal",
-        location="SENTINEL DMS Local PKI",
+        location="BetterDoc DMS Local PKI",
         use_lta=True,
     )
 

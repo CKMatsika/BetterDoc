@@ -14,15 +14,15 @@ return new class extends Migration
             return;
         }
 
-        // Grant least-privilege runtime permissions to sentinel_app when present
+        // Grant least-privilege runtime permissions to betterdoc_app when present
         DB::statement(<<<'SQL'
             DO $$
             BEGIN
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'sentinel_app') THEN
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO sentinel_app;
-                    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO sentinel_app;
-                    REVOKE UPDATE, DELETE, TRUNCATE ON audit_events FROM sentinel_app;
-                    GRANT SELECT, INSERT ON audit_events TO sentinel_app;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'betterdoc_app') THEN
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO betterdoc_app;
+                    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO betterdoc_app;
+                    REVOKE UPDATE, DELETE, TRUNCATE ON audit_events FROM betterdoc_app;
+                    GRANT SELECT, INSERT ON audit_events TO betterdoc_app;
                 END IF;
             END
             $$;
@@ -36,33 +36,33 @@ return new class extends Migration
             CREATE POLICY documents_tenant_mac_select ON documents
             FOR SELECT
             USING (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 AND deleted_at IS NULL
                 AND (
                     id = ANY(
                         COALESCE(
-                            string_to_array(NULLIF(current_setting('sentinel.break_glass_doc_ids', true), ''), ',')::uuid[],
+                            string_to_array(NULLIF(current_setting('betterdoc.break_glass_doc_ids', true), ''), ',')::uuid[],
                             ARRAY[]::uuid[]
                         )
                     )
                     OR (
-                        classification_rank <= COALESCE(NULLIF(current_setting('sentinel.clearance_rank', true), '')::int, -1)
+                        classification_rank <= COALESCE(NULLIF(current_setting('betterdoc.clearance_rank', true), '')::int, -1)
                         AND NOT EXISTS (
                             SELECT 1 FROM document_compartments dc
                             WHERE dc.document_id = documents.id
                               AND dc.compartment_id <> ALL(
                                   COALESCE(
-                                      string_to_array(NULLIF(current_setting('sentinel.compartment_ids', true), ''), ',')::uuid[],
+                                      string_to_array(NULLIF(current_setting('betterdoc.compartment_ids', true), ''), ',')::uuid[],
                                       ARRAY[]::uuid[]
                                   )
                               )
                         )
                         AND NOT (
                             hr_restricted_from_subject = true
-                            AND hr_subject_user_id = NULLIF(current_setting('sentinel.user_id', true), '')::uuid
+                            AND hr_subject_user_id = NULLIF(current_setting('betterdoc.user_id', true), '')::uuid
                         )
                         AND (
-                            owner_id = NULLIF(current_setting('sentinel.user_id', true), '')::uuid
+                            owner_id = NULLIF(current_setting('betterdoc.user_id', true), '')::uuid
                             OR EXISTS (
                                 SELECT 1 FROM document_acl_grants g
                                 WHERE g.document_id = documents.id
@@ -70,22 +70,22 @@ return new class extends Migration
                                   AND g.perm_view = true
                                   AND (g.expires_at IS NULL OR g.expires_at > now())
                                   AND (
-                                      (g.principal_type = 'user' AND g.principal_id = NULLIF(current_setting('sentinel.user_id', true), ''))
+                                      (g.principal_type = 'user' AND g.principal_id = NULLIF(current_setting('betterdoc.user_id', true), ''))
                                       OR (g.principal_type = 'org_unit' AND g.principal_id = ANY(
-                                          COALESCE(string_to_array(NULLIF(current_setting('sentinel.ancestor_unit_ids', true), ''), ','), ARRAY[]::text[])
+                                          COALESCE(string_to_array(NULLIF(current_setting('betterdoc.ancestor_unit_ids', true), ''), ','), ARRAY[]::text[])
                                       ))
                                       OR (g.principal_type = 'role' AND g.principal_id = ANY(
-                                          COALESCE(string_to_array(NULLIF(current_setting('sentinel.role_ids', true), ''), ','), ARRAY[]::text[])
+                                          COALESCE(string_to_array(NULLIF(current_setting('betterdoc.role_ids', true), ''), ','), ARRAY[]::text[])
                                       ))
                                   )
                             )
                             OR (
                                 unit_wide_readable = true
-                                AND NULLIF(current_setting('sentinel.org_unit_path', true), '') IS NOT NULL
+                                AND NULLIF(current_setting('betterdoc.org_unit_path', true), '') IS NOT NULL
                                 AND EXISTS (
                                     SELECT 1 FROM org_units ou
                                     WHERE ou.id = documents.org_unit_id
-                                      AND ou.path <@ NULLIF(current_setting('sentinel.org_unit_path', true), '')::ltree
+                                      AND ou.path <@ NULLIF(current_setting('betterdoc.org_unit_path', true), '')::ltree
                                 )
                             )
                         )
@@ -98,9 +98,9 @@ return new class extends Migration
             CREATE POLICY documents_tenant_mac_insert ON documents
             FOR INSERT
             WITH CHECK (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
-                AND owner_id = NULLIF(current_setting('sentinel.user_id', true), '')::uuid
-                AND classification_rank <= COALESCE(NULLIF(current_setting('sentinel.clearance_rank', true), '')::int, -1)
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
+                AND owner_id = NULLIF(current_setting('betterdoc.user_id', true), '')::uuid
+                AND classification_rank <= COALESCE(NULLIF(current_setting('betterdoc.clearance_rank', true), '')::int, -1)
             )
         SQL);
 
@@ -108,21 +108,21 @@ return new class extends Migration
             CREATE POLICY documents_tenant_mac_update ON documents
             FOR UPDATE
             USING (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
-                AND classification_rank <= COALESCE(NULLIF(current_setting('sentinel.clearance_rank', true), '')::int, -1)
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
+                AND classification_rank <= COALESCE(NULLIF(current_setting('betterdoc.clearance_rank', true), '')::int, -1)
                 AND NOT EXISTS (
                     SELECT 1 FROM document_compartments dc
                     WHERE dc.document_id = documents.id
                       AND dc.compartment_id <> ALL(
                           COALESCE(
-                              string_to_array(NULLIF(current_setting('sentinel.compartment_ids', true), ''), ',')::uuid[],
+                              string_to_array(NULLIF(current_setting('betterdoc.compartment_ids', true), ''), ',')::uuid[],
                               ARRAY[]::uuid[]
                           )
                       )
                 )
             )
             WITH CHECK (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
             )
         SQL);
 
@@ -130,8 +130,8 @@ return new class extends Migration
             CREATE POLICY documents_tenant_mac_delete ON documents
             FOR DELETE
             USING (
-                tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
-                AND classification_rank <= COALESCE(NULLIF(current_setting('sentinel.clearance_rank', true), '')::int, -1)
+                tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
+                AND classification_rank <= COALESCE(NULLIF(current_setting('betterdoc.clearance_rank', true), '')::int, -1)
             )
         SQL);
 
@@ -143,12 +143,12 @@ return new class extends Migration
                 CREATE POLICY {$table}_tenant_mac_all ON {$table}
                 FOR ALL
                 USING (
-                    tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
-                    AND default_classification_rank <= COALESCE(NULLIF(current_setting('sentinel.clearance_rank', true), '')::int, -1)
+                    tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
+                    AND default_classification_rank <= COALESCE(NULLIF(current_setting('betterdoc.clearance_rank', true), '')::int, -1)
                 )
                 WITH CHECK (
-                    tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
-                    AND default_classification_rank <= COALESCE(NULLIF(current_setting('sentinel.clearance_rank', true), '')::int, -1)
+                    tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
+                    AND default_classification_rank <= COALESCE(NULLIF(current_setting('betterdoc.clearance_rank', true), '')::int, -1)
                 )
             SQL);
         }
@@ -161,10 +161,10 @@ return new class extends Migration
                 CREATE POLICY {$table}_tenant_isolation ON {$table}
                 FOR ALL
                 USING (
-                    tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                    tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 )
                 WITH CHECK (
-                    tenant_id = NULLIF(current_setting('sentinel.tenant_id', true), '')::uuid
+                    tenant_id = NULLIF(current_setting('betterdoc.tenant_id', true), '')::uuid
                 )
             SQL);
         }

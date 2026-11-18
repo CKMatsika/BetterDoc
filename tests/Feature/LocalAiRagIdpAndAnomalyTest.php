@@ -37,25 +37,25 @@ beforeEach(function (): void {
 it('hard-blocks external cloud AI plugins in air-gapped mode while running Ollama inference strictly locally', function (): void {
     $gateway = app(LocalAiGatewayService::class);
 
-    config()->set('sentinel.air_gapped', true);
-    config()->set('sentinel.ai.cloud_ai_enabled', true);
+    config()->set('betterdoc.air_gapped', true);
+    config()->set('betterdoc.ai.cloud_ai_enabled', true);
     expect(static fn () => $gateway->assertLocalCompliance())
         ->toThrow(AirGapViolationException::class);
 
-    config()->set('sentinel.ai.cloud_ai_enabled', false);
-    config()->set('sentinel.ai.driver', 'cloud_openai');
+    config()->set('betterdoc.ai.cloud_ai_enabled', false);
+    config()->set('betterdoc.ai.driver', 'cloud_openai');
     expect(static fn () => $gateway->assertLocalCompliance())
         ->toThrow(AirGapViolationException::class);
 
-    config()->set('sentinel.ai.driver', 'local_hybrid');
-    config()->set('sentinel.ai.cloud_endpoint', 'https://api.openai.com/v1');
+    config()->set('betterdoc.ai.driver', 'local_hybrid');
+    config()->set('betterdoc.ai.cloud_endpoint', 'https://api.openai.com/v1');
     expect(static fn () => $gateway->assertLocalCompliance())
         ->toThrow(AirGapViolationException::class);
 
-    // Enable local-network Ollama container strictly inside sentinel_internal Docker network
-    config()->set('sentinel.ai.cloud_endpoint', '');
-    config()->set('sentinel.ai.driver', 'ollama');
-    config()->set('sentinel.ai.ollama_url', 'http://ollama:11434');
+    // Enable local-network Ollama container strictly inside betterdoc_internal Docker network
+    config()->set('betterdoc.ai.cloud_endpoint', '');
+    config()->set('betterdoc.ai.driver', 'ollama');
+    config()->set('betterdoc.ai.ollama_url', 'http://ollama:11434');
 
     Http::fake([
         'http://ollama:11434/api/embeddings' => Http::response(['embedding' => [3.0, 4.0, 0.0]], 200),
@@ -63,14 +63,14 @@ it('hard-blocks external cloud AI plugins in air-gapped mode while running Ollam
     ]);
 
     $embedRes = $gateway->embed('Airspace readiness brief');
-    expect($embedRes['model'])->toBe(config()->string('sentinel.ai.embed_model', 'bge-m3'))
+    expect($embedRes['model'])->toBe(config()->string('betterdoc.ai.embed_model', 'bge-m3'))
         ->and($embedRes['vector'])->toHaveCount(3)
         ->and(round($embedRes['vector'][0], 2))->toBe(0.6)
         ->and(round($embedRes['vector'][1], 2))->toBe(0.8);
 
     $genRes = $gateway->generateText('Summarize offline.', 'Test prompt');
     expect($genRes['text'])->toBe('Local offline Qwen2.5 summary grounded cleanly.')
-        ->and($genRes['model'])->toBe(config()->string('sentinel.ai.chat_model', 'qwen2.5:7b-instruct'));
+        ->and($genRes['model'])->toBe(config()->string('betterdoc.ai.chat_model', 'qwen2.5:7b-instruct'));
 
     Http::assertSentCount(2);
 });
@@ -348,7 +348,7 @@ it('executes offline document AI tools including ChiShona/IsiNdebele translation
             'version_major' => 1,
             'version_minor' => 0,
             'is_current' => false,
-            'storage_disk' => 'sentinel_vault',
+            'storage_disk' => 'betterdoc_vault',
             'storage_key' => 'vault/test-v1.bin',
             'original_filename' => 'directive-v1.pdf',
             'mime_type' => 'application/pdf',
@@ -369,7 +369,7 @@ it('executes offline document AI tools including ChiShona/IsiNdebele translation
             'version_major' => 2,
             'version_minor' => 0,
             'is_current' => true,
-            'storage_disk' => 'sentinel_vault',
+            'storage_disk' => 'betterdoc_vault',
             'storage_key' => 'vault/test-v2.bin',
             'original_filename' => 'directive-v2.pdf',
             'mime_type' => 'application/pdf',
@@ -600,6 +600,6 @@ it('detects bulk downloads, after-hours Secret+ accesses, and duplicate invoice 
     ))->toBe(AnomalyStatus::Acknowledged->value);
 
     // Artisan CLI sweep runs cleanly and remains idempotent within 6-hour deduplication window
-    $this->artisan('sentinel:ai:scan-anomalies', ['--tenant' => $tenant->id])
+    $this->artisan('betterdoc:ai:scan-anomalies', ['--tenant' => $tenant->id])
         ->assertExitCode(0);
 });

@@ -38,9 +38,9 @@ return [
 
         'apps' => [
             [
-                'key' => env('REVERB_APP_KEY', 'sentinel-lan-key'),
-                'secret' => env('REVERB_APP_SECRET', 'sentinel-lan-secret'),
-                'app_id' => env('REVERB_APP_ID', 'sentinel'),
+                'key' => env('REVERB_APP_KEY', 'betterdoc-lan-key'),
+                'secret' => env('REVERB_APP_SECRET', 'betterdoc-lan-secret'),
+                'app_id' => env('REVERB_APP_ID', 'betterdoc'),
                 'options' => [
                     'host' => env('REVERB_HOST', '127.0.0.1'),
                     'port' => (int) env('REVERB_PORT', 8081),

@@ -1,0 +1,93 @@
+code: government
+name: "Government & Public Sector Profile"
+hosting_mode_default: air_gapped_on_prem
+air_gapped_enforced: true
+write_down_mode: strict
+
+branding:
+  organization_name: "Ministry / Public Agency Document Registry"
+  short_name: "GOV BETTERDOC"
+  primary_color: "#0F172A"
+  accent_color: "#0E7C66"
+  banner_text_prefix: "OFFICIAL REGISTRY"
+  locale: en
+
+terminology:
+  cabinet: "Ministry Registry"
+  folder: "File Dossier"
+  document: "Official Record"
+  unit: "Department / Directorate"
+  registry_item: "Gazette / Registry Entry"
+  approver: "Permanent Secretary / Director"
+
+security:
+  mfa_required: false
+  session_idle_minutes: 30
+  step_up_ttl_minutes: 10
+  max_failed_logins: 5
+  lockout_minutes: 15
+  two_person_default_rank: 2
+  hsm_required: false
+
+clearance_ladder:
+  - rank: 0
+    code: PUBLIC
+    name: "Public"
+    color_hex: "#16A34A"
+    watermark_mode: none
+    two_person_required: false
+    secure_print_required: false
+    cloud_sync_allowed: false
+    e2ee_required: false
+  - rank: 1
+    code: OFFICIAL
+    name: "Official"
+    color_hex: "#0284C7"
+    watermark_mode: footer
+    two_person_required: false
+    secure_print_required: true
+    cloud_sync_allowed: false
+    e2ee_required: false
+  - rank: 2
+    code: CONFIDENTIAL
+    name: "Confidential"
+    color_hex: "#D97706"
+    watermark_mode: diagonal
+    two_person_required: true
+    secure_print_required: true
+    cloud_sync_allowed: false
+    e2ee_required: false
+  - rank: 3
+    code: SECRET
+    name: "Secret"
+    color_hex: "#DC2626"
+    watermark_mode: dynamic_anti_screenshot
+    two_person_required: true
+    secure_print_required: true
+    cloud_sync_allowed: false
+    e2ee_required: true
+
+default_compartments:
+  - code: CABINET
+    name: "Cabinet & Executive"
+    description: "Cabinet memoranda, policy directives, and parliamentary submissions."
+  - code: FINANCE
+    name: "Treasury & Procurement"
+    description: "Public tender awards, appropriations, and audit schedules."
+  - code: LEGAL
+    name: "Legal & Statutory"
+    description: "Statutory instruments, contracts, and Attorney-General opinions."
+  - code: HR
+    name: "Public Service HR"
+    description: "Civil service establishment, appointments, and disciplinary boards."
+
+features:
+  correspondence_registry: true
+  ap_automation: true
+  zimra_e_invoicing: false
+  contracts_lifecycle: true
+  hr_vault: true
+  cloud_sync: false
+  cloud_ai: false
+  two_person_strict: true
+  secure_print_default: true

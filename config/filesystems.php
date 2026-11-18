@@ -113,6 +113,23 @@ return [
                 'throw' => true,
             ],
 
+        'betterdoc_branding' => env('BETTERDOC_STORAGE_DRIVER', 'local') === 's3'
+            ? [
+                'driver' => 's3',
+                'key' => env('MINIO_ACCESS_KEY', env('AWS_ACCESS_KEY_ID')),
+                'secret' => env('MINIO_SECRET_KEY', env('AWS_SECRET_ACCESS_KEY')),
+                'region' => env('MINIO_REGION', 'us-east-1'),
+                'bucket' => env('BETTERDOC_BRANDING_BUCKET', 'betterdoc-branding'),
+                'endpoint' => env('MINIO_ENDPOINT', 'http://minio:9000'),
+                'use_path_style_endpoint' => true,
+                'throw' => true,
+            ]
+            : [
+                'driver' => 'local',
+                'root' => storage_path('app/betterdoc/branding'),
+                'throw' => true,
+            ],
+
     ],
 
     /*

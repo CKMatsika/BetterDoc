@@ -5,6 +5,9 @@ const root = process.cwd();
 const targets = [
     path.join(root, 'public', 'build'),
     path.join(root, 'resources', 'views'),
+    path.join(root, 'resources', 'js', 'Pages', 'Landing'),
+    path.join(root, 'resources', 'js', 'Pages', 'Auth'),
+    path.join(root, 'resources', 'js', 'Pages', 'Admin'),
 ];
 
 const allowedNamespaces = [
@@ -20,7 +23,7 @@ const violations = [];
 
 function scanFile(filePath) {
     const ext = path.extname(filePath).toLowerCase();
-    if (!['.js', '.mjs', '.css', '.html', '.php', '.svg', '.json', '.webmanifest'].includes(ext)) {
+    if (!['.js', '.mjs', '.css', '.html', '.php', '.svg', '.json', '.webmanifest', '.vue'].includes(ext)) {
         return;
     }
 
@@ -36,7 +39,12 @@ function scanFile(filePath) {
         }
         if (/fonts\.(googleapis|gstatic|bunny)|cdn\.|unpkg\.com|jsdelivr|cdnjs|gravatar|google-analytics|googletagmanager|pusher\.com/i.test(url)) {
             violations.push({ file: path.relative(root, filePath), url, severity: 'CRITICAL_EXTERNAL_DEPENDENCY' });
-        } else if (filePath.includes(`${path.sep}resources${path.sep}views${path.sep}`) || ext === '.css' || ext === '.html') {
+        } else if (
+            filePath.includes(`${path.sep}resources${path.sep}views${path.sep}`)
+            || filePath.includes(`${path.sep}resources${path.sep}js${path.sep}`)
+            || ext === '.css'
+            || ext === '.html'
+        ) {
             violations.push({ file: path.relative(root, filePath), url, severity: 'EXTERNAL_URL_IN_TEMPLATE_OR_STYLE' });
         }
     }

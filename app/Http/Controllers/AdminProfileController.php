@@ -60,7 +60,7 @@ class AdminProfileController extends Controller
 
         /** @var array{profile_code: string} $validated */
         $validated = $request->validate([
-            'profile_code' => ['required', 'string', 'in:defence,financial,corporate'],
+            'profile_code' => ['required', 'string', 'in:defence,financial,government,corporate'],
         ]);
 
         $tenant = $user->tenant;

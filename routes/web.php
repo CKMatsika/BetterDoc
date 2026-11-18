@@ -6,11 +6,16 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\MfaController;
+use App\Http\Controllers\Auth\RegisterOrganisationController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', static fn () => auth()->check()
-    ? redirect()->route('dashboard')
-    : redirect()->route('login'));
+Route::get('/', [LandingController::class, 'show'])->name('landing');
+Route::get('/branding/assets/{setting}/{slot}', [LandingController::class, 'asset'])
+    ->whereIn('slot', ['logo', 'logo_dark', 'favicon'])
+    ->name('branding.asset');
+Route::post('/demo-request', [DemoRequestController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('demo.request');
 
 Route::get('/verify/{token}', [SignatureController::class, 'verifyToken'])->name('verify.token');
 Route::get('/pki/ca/{tenantId}/root.crt', [PkiController::class, 'downloadRootCa'])->name('pki.root_ca');
@@ -31,6 +36,10 @@ Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.attempt');
     Route::post('/demo-login', [AuthController::class, 'demoLogin'])->name('login.demo');
+    Route::get('/register', [RegisterOrganisationController::class, 'show'])->name('register');
+    Route::post('/register', [RegisterOrganisationController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('register.store');
 });
 
 Route::middleware('auth')->group(function (): void {
@@ -202,5 +211,17 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/admin/operations/sync-process', [OperationsController::class, 'processSync'])->name('admin.operations.sync_process');
         Route::post('/admin/operations/backups', [OperationsController::class, 'createBackup'])->name('admin.operations.backups.create');
         Route::post('/admin/operations/backups/{backupSnapshot}/restore-drill', [OperationsController::class, 'restoreDrill'])->name('admin.operations.backups.restore_drill');
+
+        // Configurable Branding, Presets & Demo Requests (SystemAdmin manage-branding permission)
+        Route::get('/settings/branding', [BrandingSettingsController::class, 'index'])->name('settings.branding');
+        Route::post('/settings/branding', [BrandingSettingsController::class, 'update'])->name('settings.branding.update');
+        Route::post('/settings/branding/preset', [BrandingSettingsController::class, 'applyPreset'])->name('settings.branding.preset');
+        Route::post('/settings/branding/reset', [BrandingSettingsController::class, 'reset'])->name('settings.branding.reset');
+
+        // Super Admin Users, Roles & Granular Permissions
+        Route::get('/admin/users', [UserManagementController::class, 'index'])->name('admin.users');
+        Route::post('/admin/org-units', [UserManagementController::class, 'storeOrgUnit'])->name('admin.org_units.store');
+        Route::post('/admin/users', [UserManagementController::class, 'store'])->name('admin.users.store');
+        Route::patch('/admin/users/{targetUser}', [UserManagementController::class, 'updateAccess'])->name('admin.users.update');
     });
 });

@@ -7,9 +7,13 @@ return [
 
     'hosting_mode' => env('BETTERDOC_HOSTING_MODE', 'air_gapped_on_prem'),
 
+    'landing_mode' => env('LANDING_MODE', 'portal'), // portal | demo | off
+
     'default_profile' => env('BETTERDOC_DEFAULT_PROFILE', 'defence'),
 
-    'demo_switcher_enabled' => (bool) env('BETTERDOC_DEMO_SWITCHER', env('APP_ENV', 'production') !== 'production'),
+    'demo_switcher_enabled' => (bool) env('BETTERDOC_DEMO_SWITCHER', false),
+
+    'self_registration_enabled' => (bool) env('BETTERDOC_SELF_REGISTRATION', true),
 
     'demo_password' => env('BETTERDOC_DEMO_PASSWORD', 'BetterDocDemo!2026'),
 

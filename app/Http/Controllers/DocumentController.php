@@ -35,6 +35,7 @@ use App\Models\WorkflowDefinition;
 use App\Models\WorkflowInstance;
 use App\Models\WorkflowTask;
 use App\Services\Audit\ImmutableAuditLogger;
+use App\Services\Branding\BrandingService;
 use App\Services\Crypto\EnvelopeEncryptionService;
 use App\Services\Dms\DocumentVersioningService;
 use App\Services\Search\DocumentSearchService;
@@ -65,6 +66,7 @@ class DocumentController extends Controller
         private readonly EnvelopeEncryptionService $crypto,
         private readonly DocumentVersioningService $versioning,
         private readonly PadesSignerService $pades,
+        private readonly BrandingService $branding,
     ) {}
 
     public function index(Request $request): Response
@@ -462,6 +464,7 @@ class DocumentController extends Controller
                 ])->values()->all(),
             ],
             'watermarkOverlay' => [
+                'org_name' => $this->branding->toPublicPayload($user)['short_name'],
                 'viewer' => ($user->rank_title ? $user->rank_title.' ' : '').$user->name,
                 'service_number' => $user->service_number ?? $user->email,
                 'classification' => strtoupper($document->classificationLevel->name ?? 'CLASSIFIED'),

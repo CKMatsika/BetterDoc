@@ -14,12 +14,14 @@ import {
     Inbox,
     LayoutDashboard,
     LogOut,
+    Palette,
     Printer,
     Receipt,
     Server,
     ShieldCheck,
     SlidersHorizontal,
     UserCheck,
+    UserCog,
     Users,
     KeyRound,
     CheckCircle2,
@@ -94,6 +96,12 @@ const navItems = computed(() => [
     { label: 'Audit Ledger', href: '/audit', icon: ShieldCheck, badge: 0 },
     { label: 'Sync, Backup & DR', href: '/admin/operations', icon: Server, badge: 0 },
     { label: 'Profiles & Security', href: '/admin/profiles', icon: SlidersHorizontal, badge: 0 },
+    ...(user.value?.roles?.includes('SystemAdmin')
+        ? [
+              { label: 'Users & Roles', href: '/admin/users', icon: UserCog, badge: 0 },
+              { label: 'Branding & Portal', href: '/settings/branding', icon: Palette, badge: 0 },
+          ]
+        : []),
     { label: 'MFA & Devices', href: '/security/mfa/setup', icon: KeyRound, badge: 0 },
 ]);
 </script>
@@ -113,13 +121,17 @@ const navItems = computed(() => [
             <aside class="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-slate-900 text-slate-100 md:flex">
                 <div class="border-b border-slate-800 px-5 py-4">
                     <div class="flex items-center gap-2.5">
-                        <img src="/betterdoc-icon.svg" alt="BetterDoc" class="h-8 w-8 rounded-md" />
+                        <img
+                            :src="props.branding?.logo_dark_url || props.branding?.logo_url || '/betterdoc-icon.svg'"
+                            :alt="props.branding?.name ?? 'BetterDoc DMS'"
+                            class="h-8 w-8 rounded-md object-contain"
+                        />
                         <div class="min-w-0">
                             <p class="truncate text-sm font-bold tracking-tight text-white">
-                                {{ tenant?.branding?.short_name ?? 'BetterDoc DMS' }}
+                                {{ props.branding?.short_name ?? tenant?.branding?.short_name ?? 'BetterDoc DMS' }}
                             </p>
                             <p class="truncate text-[11px] text-slate-400">
-                                {{ tenant?.name ?? 'LAN-First Document Vault' }}
+                                {{ props.branding?.name ?? tenant?.name ?? 'LAN-First Document Vault' }}
                             </p>
                         </div>
                     </div>

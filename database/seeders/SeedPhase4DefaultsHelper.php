@@ -54,6 +54,7 @@ class SeedPhase4DefaultsHelper
                 'name' => match ($profile) {
                     ProfileCode::Defence => 'Command Directive Clearance Routing',
                     ProfileCode::Financial => 'Credit & Compliance Approval Route',
+                    ProfileCode::Government => 'Directorate & Permanent Secretary Approval',
                     ProfileCode::Corporate => 'Executive Capex & Contract Approval',
                 },
                 'description' => 'Automatically routes rank >= 2 records to Senior Approver and lower ranks through Records Officer review.',
@@ -90,6 +91,13 @@ class SeedPhase4DefaultsHelper
                 'prefix' => 'ZC/CORP',
                 'body' => '<p><strong>DATE:</strong> {{date}}</p><p><strong>ATTENTION:</strong> {{recipient_name}} ({{unit_code}})</p><p><strong>RE:</strong> {{subject}}</p><hr/><p>{{body_text}}</p><p>Issued via ZimCorp Enterprise Document Hub.</p>',
             ],
+            ProfileCode::Government => [
+                'code' => 'GOV-MIN-01',
+                'name' => 'Ministerial Minute & Gazette Notice',
+                'category' => TemplateCategory::Memo,
+                'prefix' => 'GOV/MIN',
+                'body' => '<p><strong>DATE:</strong> {{date}}</p><p><strong>RECIPIENT:</strong> {{recipient_name}} ({{unit_code}})</p><p><strong>SUBJECT:</strong> {{subject}}</p><hr/><p>{{body_text}}</p><p>Issued under Official Public Records Registry.</p>',
+            ],
         };
 
         DocumentTemplate::query()->firstOrCreate(
@@ -125,6 +133,10 @@ class SeedPhase4DefaultsHelper
             ProfileCode::Corporate => [
                 ['code' => 'CORP-TAX-6Y', 'name' => 'Corporate Contracts & Tax Records (6 Years)', 'days' => 2190, 'action' => DispositionAction::Archive],
                 ['code' => 'CORP-GEN-2Y', 'name' => 'General Commercial Memos (2 Years)', 'days' => 730, 'action' => DispositionAction::Destroy],
+            ],
+            ProfileCode::Government => [
+                ['code' => 'GOV-ARCH-30Y', 'name' => 'Statutory Instruments & National Archives (30 Years)', 'days' => 10950, 'action' => DispositionAction::Archive],
+                ['code' => 'GOV-CORR-7Y', 'name' => 'Departmental Correspondence (7 Years)', 'days' => 2555, 'action' => DispositionAction::ReviewTransfer],
             ],
         };
 

@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\UserNotification;
 use App\Models\UserSession;
 use App\Models\WorkflowTask;
+use App\Services\Branding\BrandingService;
 use App\Services\Profile\ProfileManager;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -22,6 +23,7 @@ class HandleInertiaRequests extends Middleware
 
     public function __construct(
         private readonly ProfileManager $profiles,
+        private readonly BrandingService $branding,
     ) {}
 
     public function version(Request $request): ?string
@@ -151,6 +153,7 @@ class HandleInertiaRequests extends Middleware
                 'name' => config('app.name', 'BetterDoc DMS'),
                 'air_gapped' => (bool) config('betterdoc.air_gapped', true),
                 'demo_switcher_enabled' => (bool) config('betterdoc.demo_switcher_enabled', false),
+                'self_registration_enabled' => (bool) config('betterdoc.self_registration_enabled', true),
                 'reverb' => [
                     'enabled' => config('broadcasting.default') === 'reverb',
                     'key' => config()->string('broadcasting.connections.reverb.key', 'betterdoc-lan-key'),
@@ -161,6 +164,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'auth' => $authPayload,
             'tenant' => $tenantPayload,
+            'branding' => $this->branding->toPublicPayload($user),
             'pendingApprovalsCount' => $pendingApprovals,
             'pendingWorkflowTasksCount' => $pendingWorkflowTasks,
             'unreadNotificationsCount' => $unreadNotificationsCount,

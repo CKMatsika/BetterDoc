@@ -40,7 +40,7 @@ export interface TenantInfo {
     hosting_mode: string;
     hosting_mode_label: string;
     air_gapped: boolean;
-    active_profile_code: 'defence' | 'financial' | 'corporate';
+    active_profile_code: 'defence' | 'financial' | 'government' | 'corporate';
     branding: {
         organization_name?: string;
         short_name?: string;
@@ -101,11 +101,48 @@ export interface DocumentCommentItem {
     }[];
 }
 
+export interface BrandingPayload {
+    id: string | null;
+    profile_key: string;
+    name: string;
+    short_name: string;
+    tagline: string;
+    logo_url: string | null;
+    logo_dark_url: string | null;
+    favicon_url: string;
+    primary_color: string;
+    primary_fg: string;
+    accent_color: string;
+    accent_fg: string;
+    welcome_title: string;
+    welcome_text: string;
+    notice_text: string;
+    notice_enabled: boolean;
+    support_email: string;
+    support_phone: string;
+    support_hours: string;
+    address: string;
+    website: string;
+    show_powered_by: boolean;
+    landing_mode_setting: string | null;
+    effective_landing_mode: 'portal' | 'demo' | 'off';
+    contrast: {
+        primary_fg: string;
+        primary_button_ratio: number;
+        primary_on_light_ratio: number;
+        accent_fg: string;
+        accent_button_ratio: number;
+        accent_on_light_ratio: number;
+        warnings: string[];
+    };
+}
+
 export interface SharedProps {
     app: {
         name: string;
         air_gapped: boolean;
         demo_switcher_enabled: boolean;
+        self_registration_enabled: boolean;
         reverb?: {
             enabled: boolean;
             key: string;
@@ -118,6 +155,7 @@ export interface SharedProps {
         user: AuthUser;
     } | null;
     tenant: TenantInfo | null;
+    branding: BrandingPayload;
     pendingApprovalsCount: number;
     pendingWorkflowTasksCount: number;
     unreadNotificationsCount: number;

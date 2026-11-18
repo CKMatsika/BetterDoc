@@ -12,6 +12,7 @@ const props = withDefaults(
         streamUrl: string;
         mimeType: string;
         watermark: {
+            org_name?: string;
             viewer: string;
             service_number: string;
             classification: string;
@@ -369,7 +370,9 @@ watch(() => props.streamUrl, () => {
                             class="-rotate-30 text-center font-mono text-[11px] font-bold tracking-wider uppercase"
                             :class="watermark.break_glass ? 'text-red-700' : 'text-slate-700'"
                         >
-                            <div>{{ watermark.break_glass ? 'BREAK-GLASS EMERGENCY ACCESS' : watermark.classification }}</div>
+                            <div>
+                                {{ watermark.org_name ? `${watermark.org_name} · ` : '' }}{{ watermark.break_glass ? 'BREAK-GLASS EMERGENCY ACCESS' : watermark.classification }}
+                            </div>
                             <div>{{ watermark.viewer }} ({{ watermark.service_number }})</div>
                             <div>{{ watermark.ip }} · {{ watermark.timestamp }}</div>
                         </div>

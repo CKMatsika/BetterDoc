@@ -14,6 +14,7 @@ use App\Models\Printer;
 use App\Models\PrintJob;
 use App\Models\User;
 use App\Services\Audit\ImmutableAuditLogger;
+use App\Services\Branding\BrandingService;
 use App\Services\Collaboration\RealtimeNotificationService;
 use App\Services\Crypto\EnvelopeEncryptionService;
 use App\Services\Security\BetterDocHttpClientGuard;
@@ -40,6 +41,7 @@ class PrintService
         private readonly RealtimeNotificationService $notifications,
         private readonly DbSecurityContext $dbContext,
         private readonly BetterDocHttpClientGuard $guard,
+        private readonly BrandingService $branding,
     ) {}
 
     /**
@@ -115,9 +117,12 @@ class PrintService
         $jobId = (string) Str::uuid7();
         $ip = $request?->ip() ?? '127.0.0.1';
         $serviceNo = $user->service_number ?? $user->email;
+        $brand = $this->branding->toPublicPayload($user);
+        $orgTag = strtoupper($brand['short_name']);
         $rankLabel = strtoupper($document->classificationLevel->name ?? "LEVEL {$document->classification_rank}");
         $stampText = sprintf(
-            '%s | %s | %s | %s | IP:%s | JOB:%s',
+            '%s | %s | %s | %s | %s | IP:%s | JOB:%s',
+            $orgTag,
             $user->name,
             $serviceNo,
             $rankLabel,
@@ -136,7 +141,7 @@ class PrintService
 
         $spoolBytes = $rawBytes;
         if ($version->mime_type === 'application/pdf') {
-            $banner = $rankLabel.' — AUTHORIZED PRINT COPY FOR '.$user->name.' ('.$serviceNo.')';
+            $banner = $orgTag.' | '.$rankLabel.' — AUTHORIZED PRINT COPY FOR '.$user->name.' ('.$serviceNo.')';
             $spoolBytes = $this->bridge->watermarkPdf($rawBytes, $stampText, $banner);
         }
 

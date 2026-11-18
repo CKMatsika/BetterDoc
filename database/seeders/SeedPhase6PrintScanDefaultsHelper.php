@@ -43,6 +43,7 @@ class SeedPhase6PrintScanDefaultsHelper
                 'ops.lead@zimcorp.co.zw' => 'BADGE-ZC-0102',
                 'clerk@zimcorp.co.zw' => 'BADGE-ZC-0215',
             ],
+            ProfileCode::Government => [],
         };
 
         foreach ($badgeMap as $email => $uid) {
@@ -66,6 +67,9 @@ class SeedPhase6PrintScanDefaultsHelper
             ProfileCode::Corporate => [
                 ['code' => 'CC-FIN-AP', 'name' => 'Accounts Payable & Finance', 'quota' => 3500],
                 ['code' => 'CC-OPS-FLEET', 'name' => 'Commercial Operations Print', 'quota' => 2000],
+            ],
+            ProfileCode::Government => [
+                ['code' => 'CC-MIN-REG', 'name' => 'Registry & Gazette Print', 'quota' => 4000],
             ],
         };
 
@@ -95,6 +99,9 @@ class SeedPhase6PrintScanDefaultsHelper
             ProfileCode::Corporate => [
                 ['name' => 'Open Office Workgroup MFP', 'location' => 'Borrowdale West Floor 1', 'queue' => 'zc-office-l1', 'max_rank' => 1],
                 ['name' => 'Executive Boardroom Secure Printer', 'location' => 'Executive Suite Floor 3', 'queue' => 'zc-exec-sec', 'max_rank' => 2],
+            ],
+            ProfileCode::Government => [
+                ['name' => 'Registry Secure Release MFP', 'location' => 'Ministry Ground Floor', 'queue' => 'gov-reg-l1', 'max_rank' => 2],
             ],
         };
 

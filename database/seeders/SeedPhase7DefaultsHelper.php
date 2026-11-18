@@ -94,6 +94,13 @@ class SeedPhase7DefaultsHelper
                 'PO-ZC-2026-042',
                 'GRN-ZC-2026-042',
             ],
+            ProfileCode::Government => [
+                'VND-GOV-01',
+                'Public Printing & Stationery Corp',
+                '2000110099',
+                'PO-GOV-2026-001',
+                'GRN-GOV-2026-001',
+            ],
         };
 
         /** @var Vendor $vendor */
@@ -170,6 +177,7 @@ class SeedPhase7DefaultsHelper
         $contractNo = match ($tenant->active_profile_code) {
             ProfileCode::Defence => 'CNT-AFZ-2026-004',
             ProfileCode::Financial => 'CNT-GK-2026-012',
+            ProfileCode::Government => 'CNT-GOV-2026-001',
             ProfileCode::Corporate => 'CNT-ZC-2026-108',
         };
 
@@ -200,12 +208,23 @@ class SeedPhase7DefaultsHelper
         }
 
         // 4. HR Personnel File + Visible Employee Payslip (Alongside Restricted Inquiry)
-        $cabinet = Cabinet::query()->where('tenant_id', $tenant->id)->first();
+        $cabinet = Cabinet::query()->where('tenant_id', $tenant->id)->orderBy('name')->first();
+        $targetEmail = match ($tenant->active_profile_code) {
+            ProfileCode::Defence => 'fltlt.nyoni@afz.mil.zw',
+            ProfileCode::Financial => 'analyst.chigumba@golden-knot.co.zw',
+            ProfileCode::Government => 'clerk@government.local',
+            ProfileCode::Corporate => 'clerk@zimcorp.co.zw',
+        };
         $subject = User::query()
             ->where('tenant_id', $tenant->id)
-            ->where('id', '!=', $actor->id)
-            ->orderBy('clearance_rank')
-            ->first();
+            ->where('email', $targetEmail)
+            ->first()
+            ?? User::query()
+                ->where('tenant_id', $tenant->id)
+                ->where('id', '!=', $actor->id)
+                ->orderBy('clearance_rank')
+                ->orderBy('email')
+                ->first();
 
         if ($cabinet instanceof Cabinet && $subject instanceof User) {
             $maxAllowedRank = min($actor->clearance_rank, $subject->clearance_rank);
@@ -218,6 +237,7 @@ class SeedPhase7DefaultsHelper
             $empNo = match ($tenant->active_profile_code) {
                 ProfileCode::Defence => 'EMP-AFZ-1088',
                 ProfileCode::Financial => 'EMP-GK-0412',
+                ProfileCode::Government => 'EMP-GOV-0100',
                 ProfileCode::Corporate => 'EMP-ZC-0215',
             };
 

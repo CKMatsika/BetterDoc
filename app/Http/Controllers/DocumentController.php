@@ -15,12 +15,14 @@ use App\Http\Requests\StoreDocumentRequest;
 use App\Models\Cabinet;
 use App\Models\ClearanceLevel;
 use App\Models\Compartment;
+use App\Models\CostCentre;
 use App\Models\Document;
 use App\Models\DocumentAclGrant;
 use App\Models\DocumentAnnotation;
 use App\Models\DocumentComment;
 use App\Models\DocumentVersion;
 use App\Models\Folder;
+use App\Models\Printer;
 use App\Models\RetentionSchedule;
 use App\Models\SavedSmartView;
 use App\Models\SignatureEnvelope;
@@ -514,6 +516,18 @@ class DocumentController extends Controller
             ])->values()->all(),
             'workflowDefinitions' => $workflowDefinitions,
             'retentionSchedules' => $retentionSchedules,
+            'printers' => Printer::query()
+                ->where('tenant_id', $user->tenant_id)
+                ->where('is_online', true)
+                ->orderBy('max_classification_rank')
+                ->get(['id', 'name', 'location', 'max_classification_rank', 'supports_secure_release'])
+                ->toArray(),
+            'costCentres' => CostCentre::query()
+                ->where('tenant_id', $user->tenant_id)
+                ->where('is_active', true)
+                ->orderBy('code')
+                ->get(['id', 'code', 'name', 'monthly_page_quota', 'pages_used_month'])
+                ->toArray(),
             'capabilities' => [
                 'can_edit' => $this->policyEngine->authorize($user, 'update', $document, ['bypass_abac' => true])->allowed,
                 'can_share' => $this->policyEngine->authorize($user, 'share', $document, ['bypass_abac' => true])->allowed,

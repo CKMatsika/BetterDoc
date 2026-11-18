@@ -265,4 +265,12 @@ class Document extends Model
     {
         return $this->hasMany(IdpExtraction::class)->latest();
     }
+
+    /**
+     * @return HasMany<PrintJob, $this>
+     */
+    public function printJobs(): HasMany
+    {
+        return $this->hasMany(PrintJob::class)->latest();
+    }
 }

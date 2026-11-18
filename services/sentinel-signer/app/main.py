@@ -8,7 +8,7 @@ from typing import Any
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from app import pki_engine, redaction_engine, signing_engine
+from app import pki_engine, print_scan_engine, redaction_engine, signing_engine
 
 app = FastAPI(title="SENTINEL PAdES & PKCS#11 Signer")
 
@@ -112,3 +112,47 @@ def render_html_pdf_endpoint(body: RenderHtmlPdfBody) -> dict[str, Any]:
     )
     res["pdf_b64"] = base64.b64encode(res.pop("pdf_bytes")).decode("ascii")
     return res
+
+
+class WatermarkPdfBody(BaseModel):
+    pdf_b64: str
+    watermark_text: str
+    classification_banner: str = ""
+
+
+class GenerateSeparatorBody(BaseModel):
+    doc_type: str = "general"
+    title: str = "Scanned Record"
+    cabinet_code: str = ""
+    classification_name: str = "Internal"
+
+
+class SplitSeparatorsBody(BaseModel):
+    pdf_b64: str
+
+
+@app.post("/print/watermark-pdf")
+def watermark_pdf_endpoint(body: WatermarkPdfBody) -> dict[str, Any]:
+    res = print_scan_engine.watermark_pdf(
+        pdf_bytes=base64.b64decode(body.pdf_b64),
+        watermark_text=body.watermark_text,
+        classification_banner=body.classification_banner,
+    )
+    res["watermarked_pdf_b64"] = base64.b64encode(res.pop("watermarked_pdf_bytes")).decode("ascii")
+    return res
+
+
+@app.post("/scan/separator-pdf")
+def generate_separator_endpoint(body: GenerateSeparatorBody) -> dict[str, Any]:
+    pdf_bytes = print_scan_engine.generate_separator_pdf(
+        doc_type=body.doc_type,
+        title=body.title,
+        cabinet_code=body.cabinet_code,
+        classification_name=body.classification_name,
+    )
+    return {"pdf_b64": base64.b64encode(pdf_bytes).decode("ascii")}
+
+
+@app.post("/scan/split-separators")
+def split_separators_endpoint(body: SplitSeparatorsBody) -> dict[str, Any]:
+    return print_scan_engine.split_pdf_by_separators(base64.b64decode(body.pdf_b64))

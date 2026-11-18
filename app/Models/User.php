@@ -33,6 +33,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $password
  * @property bool $mfa_enforced
  * @property string|null $smartcard_subject_dn
+ * @property string|null $rfid_badge_uid
  * @property UserStatus $status
  * @property int $failed_login_attempts
  * @property Carbon|null $locked_until
@@ -70,6 +71,7 @@ class User extends Authenticatable implements PasskeyUser
         'password',
         'mfa_enforced',
         'smartcard_subject_dn',
+        'rfid_badge_uid',
         'status',
         'failed_login_attempts',
         'locked_until',
@@ -180,6 +182,22 @@ class User extends Authenticatable implements PasskeyUser
     public function certificates(): HasMany
     {
         return $this->hasMany(UserCertificate::class)->latest();
+    }
+
+    /**
+     * @return HasMany<PrintJob, $this>
+     */
+    public function printJobs(): HasMany
+    {
+        return $this->hasMany(PrintJob::class)->latest();
+    }
+
+    /**
+     * @return HasMany<LocalAgent, $this>
+     */
+    public function localAgents(): HasMany
+    {
+        return $this->hasMany(LocalAgent::class)->latest();
     }
 
     public function hasMfaConfigured(): bool

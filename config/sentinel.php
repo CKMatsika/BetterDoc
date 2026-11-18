@@ -144,6 +144,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Printing (CUPS/IPPS, Secure PIN/RFID Release), Scanning & Local Agent
+    |--------------------------------------------------------------------------
+    */
+    'print_scan' => [
+        'print_driver' => env('SENTINEL_PRINT_DRIVER', 'local_spool'), // local_spool | cups_ipps
+        'cups_url' => env('SENTINEL_CUPS_URL', 'http://cups:631'),
+        'max_pin_attempts' => (int) env('SENTINEL_PRINT_MAX_PIN_ATTEMPTS', 3),
+        'pin_ttl_hours' => (int) env('SENTINEL_PRINT_PIN_TTL_HOURS', 24),
+        'hot_folder_root' => env('SENTINEL_HOT_FOLDER_ROOT', storage_path('app/scan_hotfolders')),
+        'mail_in_root' => env('SENTINEL_MAIL_IN_ROOT', storage_path('app/mail_in')),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Optional LDAP / Active Directory / FreeIPA Connector
     |--------------------------------------------------------------------------
     */

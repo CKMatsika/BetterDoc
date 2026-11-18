@@ -214,6 +214,7 @@ class GoldenKnotFinancialSeeder extends Seeder
 
             SeedPhase4DefaultsHelper::seedDefaults($tenant, $cro);
             SeedPhase5AiDefaultsHelper::seedDefaults($tenant, $cro);
+            SeedPhase6PrintScanDefaultsHelper::seedDefaults($tenant, $cro);
         });
 
         if (! app()->runningUnitTests()) {

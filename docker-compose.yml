@@ -232,6 +232,14 @@ services:
       - sentinel_lan
       - sentinel_internal
 
+  cups:
+    image: olbat/cupsd:latest
+    restart: unless-stopped
+    volumes:
+      - cups_data:/etc/cups
+    networks:
+      - sentinel_internal
+
   prometheus:
     image: prom/prometheus:v3.1.0
     restart: unless-stopped
@@ -282,6 +290,7 @@ volumes:
   clamav_db:
   pki_data:
   ollama_data:
+  cups_data:
   prom_data:
   loki_data:
   grafana_data:

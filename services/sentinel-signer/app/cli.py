@@ -7,7 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-from app import pki_engine, redaction_engine, signing_engine
+from app import pki_engine, print_scan_engine, redaction_engine, signing_engine
 
 
 def main() -> int:
@@ -199,6 +199,40 @@ def main() -> int:
         )
         pdf_bytes = res.pop("pdf_bytes")
         Path(payload["output_pdf_path"]).write_bytes(pdf_bytes)
+        print(json.dumps(res))
+        return 0
+
+    if action == "watermark_pdf":
+        pdf_bytes = Path(payload["input_pdf_path"]).read_bytes()
+        res = print_scan_engine.watermark_pdf(
+            pdf_bytes=pdf_bytes,
+            watermark_text=payload["watermark_text"],
+            classification_banner=payload.get("classification_banner", ""),
+        )
+        out_bytes = res.pop("watermarked_pdf_bytes")
+        Path(payload["output_pdf_path"]).write_bytes(out_bytes)
+        print(json.dumps(res))
+        return 0
+
+    if action == "generate_separator_pdf":
+        pdf_bytes = print_scan_engine.generate_separator_pdf(
+            doc_type=payload.get("doc_type", "general"),
+            title=payload.get("title", "Scanned Record"),
+            cabinet_code=payload.get("cabinet_code", ""),
+            classification_name=payload.get("classification_name", "Internal"),
+        )
+        Path(payload["output_pdf_path"]).write_bytes(pdf_bytes)
+        print(json.dumps({"ok": True, "size": len(pdf_bytes)}))
+        return 0
+
+    if action == "split_by_separators":
+        pdf_bytes = Path(payload["input_pdf_path"]).read_bytes()
+        res = print_scan_engine.split_pdf_by_separators(pdf_bytes)
+        print(json.dumps(res))
+        return 0
+
+    if action == "deskew_images_pdf":
+        res = print_scan_engine.deskew_and_crop_images_to_pdf(payload.get("image_paths", []))
         print(json.dumps(res))
         return 0
 

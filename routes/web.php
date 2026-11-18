@@ -23,6 +23,10 @@ Route::post('/wopi/files/{documentId}', [WopiController::class, 'postFile'])->na
 Route::get('/wopi/files/{documentId}/contents', [WopiController::class, 'getFile'])->name('wopi.get_file');
 Route::post('/wopi/files/{documentId}/contents', [WopiController::class, 'putFile'])->name('wopi.put_file');
 
+// Phase 6: Workstation Sentinel Local Agent Token API (127.0.0.1 TWAIN/WIA & PKCS#11 bridge)
+Route::post('/local-agent/pair', [PrintScanController::class, 'completeAgentPairing'])->name('local_agent.pair');
+Route::post('/local-agent/scan', [PrintScanController::class, 'ingestAgentScan'])->name('local_agent.scan');
+
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.attempt');
@@ -147,5 +151,22 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/documents/{document}/ai/action', [AiController::class, 'documentAction'])->name('documents.ai.action');
         Route::post('/ai/anomalies/scan', [AiController::class, 'scanAnomalies'])->name('ai.anomalies.scan');
         Route::post('/ai/anomalies/{aiAnomalyAlert}/status', [AiController::class, 'updateAnomalyStatus'])->name('ai.anomalies.status');
+
+        // Phase 6: Printing (CUPS/IPPS, Secure PIN/RFID Release), Scanning, Barcode Separators, PWA & Local Agent
+        Route::get('/print-scan', [PrintScanController::class, 'index'])->name('print_scan.index');
+        Route::post('/print-scan/printers', [PrintScanController::class, 'storePrinter'])->name('print_scan.printers.store');
+        Route::post('/print-scan/printers/discover', [PrintScanController::class, 'discoverPrinters'])->name('print_scan.printers.discover');
+        Route::post('/print-scan/cost-centres', [PrintScanController::class, 'storeCostCentre'])->name('print_scan.cost_centres.store');
+        Route::post('/documents/{document}/print', [PrintScanController::class, 'queuePrint'])->name('documents.print');
+        Route::post('/print-scan/jobs/{printJob}/release', [PrintScanController::class, 'releaseWithPin'])->name('print_scan.jobs.release');
+        Route::post('/print-scan/release-rfid', [PrintScanController::class, 'releaseWithRfid'])->name('print_scan.release_rfid');
+        Route::get('/print-scan/jobs/{printJob}/preview', [PrintScanController::class, 'previewWatermarkedSpool'])->name('print_scan.jobs.preview');
+        Route::get('/print-scan/separator-sheet', [PrintScanController::class, 'downloadSeparatorSheet'])->name('print_scan.separator');
+        Route::post('/print-scan/scan-batches', [PrintScanController::class, 'uploadScanBatch'])->name('print_scan.batches.store');
+        Route::post('/print-scan/scan-sources', [PrintScanController::class, 'storeScanSource'])->name('print_scan.sources.store');
+        Route::post('/print-scan/scan-sources/{scanSource}/poll', [PrintScanController::class, 'pollScanSource'])->name('print_scan.sources.poll');
+        Route::post('/print-scan/agents/pair-init', [PrintScanController::class, 'initiateAgentPairing'])->name('print_scan.agents.pair_init');
+        Route::post('/print-scan/agents/{localAgent}/revoke', [PrintScanController::class, 'revokeAgent'])->name('print_scan.agents.revoke');
+        Route::get('/print-scan/agents/download-script', [PrintScanController::class, 'downloadAgentScript'])->name('print_scan.agents.script');
     });
 });

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ArrowLeft, AlertTriangle, Archive, Download, FileEdit, GitCompare, GitFork, Lock, RotateCcw, Share2, Shield, ShieldCheck, Trash2, Unlock } from '@lucide/vue';
+import { ArrowLeft, AlertTriangle, Archive, Download, FileEdit, GitCompare, GitFork, Lock, Printer, RotateCcw, Share2, Shield, ShieldCheck, Trash2, Unlock } from '@lucide/vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ClassificationBadge from '@/Components/ClassificationBadge.vue';
 import DocumentAiPanel from '@/Components/DocumentAiPanel.vue';
@@ -106,6 +106,8 @@ const props = defineProps<{
     }[];
     workflowDefinitions: { id: string; key: string; name: string; sla_hours: number }[];
     retentionSchedules: { id: string; code: string; name: string; retention_days: number; disposition_action: string }[];
+    printers: { id: string; name: string; location: string | null; max_classification_rank: number; supports_secure_release: boolean }[];
+    costCentres: { id: string; code: string; name: string; monthly_page_quota: number; pages_used_month: number }[];
     capabilities: {
         can_edit: boolean;
         can_share: boolean;
@@ -123,6 +125,22 @@ const diffFromId = ref(props.document.versions[1]?.id ?? props.document.versions
 const diffToId = ref(props.document.versions[0]?.id ?? '');
 const diffResult = ref<{ type: string; text: string }[] | null>(null);
 const showCheckinUploader = ref(false);
+const showPrintDialog = ref(false);
+
+const printForm = useForm({
+    printer_id: props.printers[0]?.id ?? '',
+    cost_centre_id: props.costCentres[0]?.id ?? '',
+    copies: 1,
+});
+
+function submitSecurePrint(): void {
+    printForm.post(`/documents/${props.document.id}/print`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showPrintDialog.value = false;
+        },
+    });
+}
 
 const shareForm = useForm({
     principal_type: 'user',
@@ -304,6 +322,14 @@ function requestDelete(): void {
                     >
                         <Download class="h-3.5 w-3.5" /> Download {{ activeVersion.label }}
                     </a>
+                    <button
+                        v-if="capabilities.can_print && activeVersion && printers.length > 0"
+                        type="button"
+                        @click="showPrintDialog = !showPrintDialog"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+                    >
+                        <Printer class="h-3.5 w-3.5" /> Secure Print
+                    </button>
                     <Link
                         v-if="activeVersion"
                         :href="`/documents/${document.id}/edit-office`"
@@ -321,6 +347,44 @@ function requestDelete(): void {
                         <span>{{ document.classification.two_person_required ? '2-Person Delete' : 'Delete' }}</span>
                     </button>
                 </div>
+            </div>
+
+            <div v-if="showPrintDialog" class="rounded-xl border border-sky-200 bg-sky-50/70 p-4 text-xs shadow-xs">
+                <div class="mb-2 flex items-center justify-between">
+                    <div class="flex items-center gap-2 font-bold text-sky-950">
+                        <Printer class="h-4 w-4 text-sky-700" />
+                        <span>One-Click Secure Watermarked Print (Held PIN / RFID Release)</span>
+                    </div>
+                    <Link href="/print-scan" class="font-semibold text-sky-700 underline">Open Release Kiosk</Link>
+                </div>
+                <form @submit.prevent="submitSecurePrint" class="grid grid-cols-1 gap-3 md:grid-cols-4">
+                    <div>
+                        <label class="mb-1 block font-medium text-slate-700">CUPS / IPPS Printer (Ceiling Checked)</label>
+                        <select v-model="printForm.printer_id" class="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs">
+                            <option v-for="p in printers" :key="p.id" :value="p.id">
+                                {{ p.name }} (Max L{{ p.max_classification_rank }} · {{ p.supports_secure_release ? 'PIN Held' : 'Direct' }})
+                            </option>
+                        </select>
+                        <p v-if="printForm.errors.printer_id" class="mt-1 text-[11px] font-semibold text-red-700">{{ printForm.errors.printer_id }}</p>
+                    </div>
+                    <div>
+                        <label class="mb-1 block font-medium text-slate-700">Cost Centre & Quota</label>
+                        <select v-model="printForm.cost_centre_id" class="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs">
+                            <option v-for="cc in costCentres" :key="cc.id" :value="cc.id">
+                                {{ cc.code }} — {{ cc.pages_used_month }}/{{ cc.monthly_page_quota }} pages
+                            </option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1 block font-medium text-slate-700">Copies</label>
+                        <input v-model.number="printForm.copies" type="number" min="1" max="50" class="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs" />
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" :disabled="printForm.processing" class="w-full rounded-lg bg-sky-700 px-3 py-1.5 font-semibold text-white hover:bg-sky-600 disabled:opacity-60">
+                            Queue Watermarked Print Job
+                        </button>
+                    </div>
+                </form>
             </div>
 
             <div v-if="showCheckinUploader">

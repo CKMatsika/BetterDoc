@@ -91,13 +91,28 @@ class EnvelopeEncryptionService
      */
     public function decryptVersionToTempHandle(DocumentVersion $version)
     {
-        $dek = $this->unwrapDek($version->wrapped_dek, $version->kek_key_id);
-        $disk = Storage::disk($version->storage_disk);
-        $encStream = $disk->readStream($version->storage_key);
+        return $this->decryptKeyToTempHandle(
+            $version->storage_disk,
+            $version->storage_key,
+            $version->wrapped_dek,
+            $version->kek_key_id,
+        );
+    }
+
+    /**
+     * Decrypt any envelope-encrypted storage object into an auto-cleaning temporary file handle.
+     *
+     * @return resource
+     */
+    public function decryptKeyToTempHandle(string $diskName, string $storageKey, string $wrappedDek, string $kekKeyId)
+    {
+        $dek = $this->unwrapDek($wrappedDek, $kekKeyId);
+        $disk = Storage::disk($diskName);
+        $encStream = $disk->readStream($storageKey);
 
         if ($encStream === null) {
             sodium_memzero($dek);
-            throw new RuntimeException("Encrypted storage object missing: {$version->storage_key}");
+            throw new RuntimeException("Encrypted storage object missing: {$storageKey}");
         }
 
         $out = tmpfile();

@@ -188,12 +188,83 @@ class ResumableUploadService
                 throw $e;
             }
 
-            // 2. Content Disarm & Reconstruction (CDR) + OCR / PDF Normalization
+            $version = $this->ingestFileIntoDocumentVersion(
+                sourceFilePath: $tempAssembled,
+                filename: $session->filename,
+                mimeType: $session->mime_type,
+                document: $document,
+                actor: $actor,
+                major: $major,
+                versionNote: $versionNote,
+                request: $request,
+                preverifiedClean: true,
+                originalSizeBytes: $totalBytes,
+                originalSha256: $assembledSha,
+            );
+
+            $session->update([
+                'document_id' => $document->id,
+                'status' => UploadStatus::Completed,
+            ]);
+
+            // Clean staging quarantine chunks
+            for ($i = 0; $i < $session->total_chunks; $i++) {
+                Storage::disk('sentinel_quarantine')->delete("{$session->storage_temp_prefix}/part_{$i}");
+            }
+
+            return $version;
+        } finally {
+            foreach ($extraTempFiles as $path) {
+                if (file_exists($path)) {
+                    @unlink($path);
+                }
+            }
+        }
+    }
+
+    /**
+     * Run Malware -> OCR/PDF-A -> CDR -> Envelope Encryption -> Version Persistence -> Search & AI Chunk Indexing
+     * cleanly for both chunked browser uploads and LAN/PWA/Hot-Folder/Agent scan ingestion.
+     */
+    public function ingestFileIntoDocumentVersion(
+        string $sourceFilePath,
+        string $filename,
+        string $mimeType,
+        Document $document,
+        User $actor,
+        bool $major = false,
+        ?string $versionNote = null,
+        ?Request $request = null,
+        bool $preverifiedClean = false,
+        ?int $originalSizeBytes = null,
+        ?string $originalSha256 = null,
+    ): DocumentVersion {
+        $extraTempFiles = [];
+
+        try {
+            if (! $preverifiedClean) {
+                try {
+                    $this->malwareScanner->scanOrFail($sourceFilePath, $filename);
+                } catch (MalwareDetectedException $e) {
+                    $this->audit->log(
+                        tenantId: $actor->tenant_id,
+                        eventType: 'security.malware_quarantined',
+                        resourceType: 'document',
+                        resourceId: $document->id,
+                        actor: $actor,
+                        classificationRank: $document->classification_rank,
+                        after: ['filename' => $filename, 'threat' => $e->getMessage()],
+                        request: $request,
+                    );
+                    throw $e;
+                }
+            }
+
             $cdrStatus = CdrStatus::Skipped;
             $cdrReport = ['stripped_vectors' => []];
-            $workingPath = $tempAssembled;
+            $workingPath = $sourceFilePath;
 
-            $ocrResult = $this->ocr->processToSearchablePdf($workingPath, $session->mime_type, $session->filename);
+            $ocrResult = $this->ocr->processToSearchablePdf($workingPath, $mimeType, $filename);
             if ($ocrResult['pdf_path'] !== $workingPath) {
                 $extraTempFiles[] = $ocrResult['pdf_path'];
                 $workingPath = $ocrResult['pdf_path'];
@@ -217,24 +288,24 @@ class ResumableUploadService
                 }
             }
 
-            // 3. Per-Document Envelope Encryption -> Clean Vault Storage
             $versionUuid = (string) Str::uuid7();
             [$nextMajor, $nextMinor] = $this->nextVersionNumbers($document, $major);
             $storageKey = "tenants/{$document->tenant_id}/docs/{$document->id}/v{$nextMajor}_{$nextMinor}_{$versionUuid}.enc";
 
-            $finalSha = hash_file('sha256', $workingPath) ?: $assembledSha;
-            $finalSize = filesize($workingPath) ?: $totalBytes;
+            $fallbackSha = $originalSha256 ?? (hash_file('sha256', $sourceFilePath) ?: hash('sha256', $filename));
+            $fallbackSize = $originalSizeBytes ?? (filesize($sourceFilePath) ?: 0);
+            $finalSha = hash_file('sha256', $workingPath) ?: $fallbackSha;
+            $finalSize = filesize($workingPath) ?: $fallbackSize;
 
             $enc = $this->crypto->encryptFileToDisk($workingPath, 'sentinel_vault', $storageKey);
 
-            // 4. Persist Version + Update Document + Idempotent Job Record + Search Index
             $version = DB::transaction(function () use (
                 $versionUuid,
                 $document,
                 $nextMajor,
                 $nextMinor,
                 $storageKey,
-                $session,
+                $filename,
                 $ocrResult,
                 $finalSize,
                 $finalSha,
@@ -260,7 +331,7 @@ class ResumableUploadService
                     'is_current' => true,
                     'storage_disk' => 'sentinel_vault',
                     'storage_key' => $storageKey,
-                    'original_filename' => $session->filename,
+                    'original_filename' => $filename,
                     'mime_type' => $ocrResult['mime_type'],
                     'file_size_bytes' => $finalSize,
                     'sha256_hash' => $finalSha,
@@ -292,11 +363,6 @@ class ResumableUploadService
                     'heartbeat_at' => now(),
                 ]);
 
-                $session->update([
-                    'document_id' => $document->id,
-                    'status' => UploadStatus::Completed,
-                ]);
-
                 $this->audit->log(
                     tenantId: $document->tenant_id,
                     eventType: 'document.version_uploaded',
@@ -317,11 +383,6 @@ class ResumableUploadService
             });
 
             $this->search->indexDocument($document->refresh());
-
-            // Clean staging quarantine chunks
-            for ($i = 0; $i < $session->total_chunks; $i++) {
-                Storage::disk('sentinel_quarantine')->delete("{$session->storage_temp_prefix}/part_{$i}");
-            }
 
             return $version;
         } finally {

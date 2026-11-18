@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: [
             'wopi/*',
+            'local-agent/*',
         ]);
         $middleware->append(SecurityHeadersMiddleware::class);
 

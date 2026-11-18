@@ -309,13 +309,13 @@ function saveUserAccess(): void {
                                     <p v-if="createForm.errors.email" class="mt-1 text-xs text-red-700">{{ createForm.errors.email }}</p>
                                 </div>
                                 <div>
-                                    <label for="new-password" class="block text-xs font-semibold text-slate-700">Initial Password *</label>
+                                    <label for="new-password" class="block text-xs font-semibold text-slate-700">Initial Password * (min 12 chars)</label>
                                     <input
                                         id="new-password"
                                         v-model="createForm.password"
                                         type="password"
                                         required
-                                        minlength="8"
+                                        minlength="12"
                                         class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
                                     />
                                     <p v-if="createForm.errors.password" class="mt-1 text-xs text-red-700">{{ createForm.errors.password }}</p>
@@ -594,11 +594,11 @@ function saveUserAccess(): void {
 
                             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 items-center">
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700">Reset Password (optional)</label>
+                                    <label class="block text-xs font-semibold text-slate-700">Reset Password (optional, min 12 chars)</label>
                                     <input
                                         v-model="editForm.password"
                                         type="password"
-                                        minlength="8"
+                                        minlength="12"
                                         placeholder="Leave blank to keep existing"
                                         class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
                                     />

@@ -47,6 +47,8 @@ return [
         'break_glass_max_hours' => (int) env('BETTERDOC_BREAK_GLASS_MAX_HOURS', 4),
         'hsm_master_key_id' => env('BETTERDOC_KEK_ID', 'betterdoc-kek-v1'),
         'master_kek_b64' => env('BETTERDOC_MASTER_KEK_B64', ''),
+        'trusted_proxies' => env('BETTERDOC_TRUSTED_PROXIES', ''),
+        'enforce_https' => (bool) env('BETTERDOC_ENFORCE_HTTPS', false),
     ],
 
     /*

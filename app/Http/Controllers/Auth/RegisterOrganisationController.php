@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\PermissionRegistrar;
@@ -84,7 +85,7 @@ class RegisterOrganisationController extends Controller
             'organisation_name' => ['required', 'string', 'min:2', 'max:160'],
             'name' => ['required', 'string', 'min:2', 'max:120'],
             'email' => ['required', 'email', 'max:160', Rule::unique('users', 'email')],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
         ]);
 
         $profileCode = ProfileCode::from($validated['organisation_type']);

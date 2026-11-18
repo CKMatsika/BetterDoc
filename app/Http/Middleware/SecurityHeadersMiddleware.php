@@ -19,6 +19,11 @@ class SecurityHeadersMiddleware
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
         $response->headers->set('Referrer-Policy', 'no-referrer');
         $response->headers->set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
+        $response->headers->set('X-Permitted-Cross-Domain-Policies', 'none');
+
+        if (app()->isProduction() || $request->isSecure()) {
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        }
 
         if (! file_exists(public_path('hot'))) {
             $response->headers->set(

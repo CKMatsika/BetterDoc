@@ -17,10 +17,18 @@ Route::post('/demo-request', [DemoRequestController::class, 'store'])
     ->middleware('throttle:5,1')
     ->name('demo.request');
 
-Route::get('/verify/{token}', [SignatureController::class, 'verifyToken'])->name('verify.token');
-Route::get('/pki/ca/{tenantId}/root.crt', [PkiController::class, 'downloadRootCa'])->name('pki.root_ca');
-Route::get('/pki/ca/{tenantId}/crl.der', [PkiController::class, 'downloadCrl'])->name('pki.crl');
-Route::get('/pki/ocsp/{tenantId}/{serial}', [PkiController::class, 'ocspCheck'])->name('pki.ocsp');
+Route::get('/verify/{token}', [SignatureController::class, 'verifyToken'])
+    ->middleware('throttle:public-verify')
+    ->name('verify.token');
+Route::get('/pki/ca/{tenantId}/root.crt', [PkiController::class, 'downloadRootCa'])
+    ->middleware('throttle:public-verify')
+    ->name('pki.root_ca');
+Route::get('/pki/ca/{tenantId}/crl.der', [PkiController::class, 'downloadCrl'])
+    ->middleware('throttle:public-verify')
+    ->name('pki.crl');
+Route::get('/pki/ocsp/{tenantId}/{serial}', [PkiController::class, 'ocspCheck'])
+    ->middleware('throttle:public-verify')
+    ->name('pki.ocsp');
 
 // Collabora Online WOPI Host Endpoints (Token-authenticated server callbacks; MAC + PostgreSQL RLS enforced per token user)
 Route::get('/wopi/files/{documentId}', [WopiController::class, 'checkFileInfo'])->name('wopi.check_file_info');
@@ -29,13 +37,21 @@ Route::get('/wopi/files/{documentId}/contents', [WopiController::class, 'getFile
 Route::post('/wopi/files/{documentId}/contents', [WopiController::class, 'putFile'])->name('wopi.put_file');
 
 // Phase 6: Workstation BetterDoc Local Agent Token API (127.0.0.1 TWAIN/WIA & PKCS#11 bridge)
-Route::post('/local-agent/pair', [PrintScanController::class, 'completeAgentPairing'])->name('local_agent.pair');
-Route::post('/local-agent/scan', [PrintScanController::class, 'ingestAgentScan'])->name('local_agent.scan');
+Route::post('/local-agent/pair', [PrintScanController::class, 'completeAgentPairing'])
+    ->middleware('throttle:30,1')
+    ->name('local_agent.pair');
+Route::post('/local-agent/scan', [PrintScanController::class, 'ingestAgentScan'])
+    ->middleware('throttle:30,1')
+    ->name('local_agent.scan');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.attempt');
-    Route::post('/demo-login', [AuthController::class, 'demoLogin'])->name('login.demo');
+    Route::post('/login', [AuthController::class, 'login'])
+        ->middleware('throttle:login')
+        ->name('login.attempt');
+    Route::post('/demo-login', [AuthController::class, 'demoLogin'])
+        ->middleware('throttle:login')
+        ->name('login.demo');
     Route::get('/register', [RegisterOrganisationController::class, 'show'])->name('register');
     Route::post('/register', [RegisterOrganisationController::class, 'store'])
         ->middleware('throttle:10,1')
@@ -47,10 +63,16 @@ Route::middleware('auth')->group(function (): void {
 
     // MFA Enrollment & Verification routes
     Route::get('/security/mfa/setup', [MfaController::class, 'showSetup'])->name('security.mfa.setup');
-    Route::post('/security/mfa/confirm', [MfaController::class, 'confirmSetup'])->name('security.mfa.confirm');
+    Route::post('/security/mfa/confirm', [MfaController::class, 'confirmSetup'])
+        ->middleware('throttle:mfa')
+        ->name('security.mfa.confirm');
     Route::get('/mfa-challenge', [MfaController::class, 'showChallenge'])->name('mfa.challenge');
-    Route::post('/mfa-challenge', [MfaController::class, 'verifyChallenge'])->name('mfa.verify');
-    Route::post('/security/mfa/step-up', [MfaController::class, 'stepUp'])->name('security.mfa.step_up');
+    Route::post('/mfa-challenge', [MfaController::class, 'verifyChallenge'])
+        ->middleware('throttle:mfa')
+        ->name('mfa.verify');
+    Route::post('/security/mfa/step-up', [MfaController::class, 'stepUp'])
+        ->middleware('throttle:mfa')
+        ->name('security.mfa.step_up');
 
     // Protected BetterDoc DMS workspace routes (Session + MFA + PostgreSQL RLS + Policy Engine)
     Route::middleware('mfa.enforced')->group(function (): void {

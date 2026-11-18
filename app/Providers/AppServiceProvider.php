@@ -10,9 +10,14 @@ use App\Policies\DocumentPolicy;
 use App\Services\Profile\ProfileManager;
 use App\Services\Security\BetterDocHttpClientGuard;
 use App\Services\Security\DbSecurityContext;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Middleware\TrustProxies;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Octane\Events\RequestTerminated;
 use Laravel\Octane\Events\TaskTerminated;
@@ -29,6 +34,37 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(Document::class, DocumentPolicy::class);
+
+        $trustedProxies = trim(config()->string('betterdoc.security.trusted_proxies', ''));
+        if ($trustedProxies !== '') {
+            $proxies = $trustedProxies === '*'
+                ? '*'
+                : array_values(array_filter(array_map('trim', explode(',', $trustedProxies))));
+            TrustProxies::at($proxies);
+        }
+
+        if (config()->boolean('betterdoc.security.enforce_https', false)) {
+            URL::forceScheme('https');
+        }
+
+        RateLimiter::for('login', static function (Request $request): array {
+            $ip = (string) ($request->ip() ?? 'unknown');
+            $identifier = strtolower(trim($request->string('identifier')->toString()));
+
+            return [
+                Limit::perMinute(10)->by($ip.'|'.$identifier),
+                Limit::perMinute(30)->by($ip),
+            ];
+        });
+
+        RateLimiter::for('mfa', static function (Request $request): Limit {
+            $actor = $request->user();
+            $key = $actor !== null ? (string) $actor->id : (string) ($request->ip() ?? 'unknown');
+
+            return Limit::perMinute(10)->by($key);
+        });
+
+        RateLimiter::for('public-verify', static fn (Request $request): Limit => Limit::perMinute(60)->by((string) ($request->ip() ?? 'unknown')));
 
         // Hard runtime egress block in air-gapped mode for every Laravel Http:: client call
         Http::globalRequestMiddleware(

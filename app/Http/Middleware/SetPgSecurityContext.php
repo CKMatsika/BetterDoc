@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Enums\UserStatus;
 use App\Models\User;
 use App\Models\UserSession;
 use App\Services\Audit\ImmutableAuditLogger;
@@ -29,6 +30,16 @@ class SetPgSecurityContext
         $user = $request->user();
 
         if ($user !== null) {
+            if ($user->status !== UserStatus::Active) {
+                if ($request->hasSession()) {
+                    Auth::guard('web')->logout();
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+                }
+
+                abort(403, 'Account is suspended or inactive.');
+            }
+
             $sessionId = $request->hasSession() ? $request->session()->getId() : '';
             if ($sessionId !== '') {
                 /** @var UserSession|null $userSession */

@@ -10,6 +10,7 @@ use App\Models\ClearanceLevel;
 use App\Models\Compartment;
 use App\Models\OrgUnit;
 use App\Models\User;
+use App\Models\UserSession;
 use App\Services\Audit\ImmutableAuditLogger;
 use App\Services\Security\PermissionCatalog;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +18,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\PermissionRegistrar;
@@ -137,7 +139,7 @@ class UserManagementController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:120'],
             'email' => ['required', 'email', 'max:160', Rule::unique('users', 'email')],
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string', Password::min(12)->mixedCase()->numbers()->symbols()],
             'service_number' => ['nullable', 'string', 'max:48'],
             'rank_title' => ['nullable', 'string', 'max:80'],
             'org_unit_id' => ['nullable', 'uuid'],
@@ -242,7 +244,7 @@ class UserManagementController extends Controller
             'permissions.*' => [Rule::in(PermissionCatalog::all())],
             'status' => ['required', Rule::in([UserStatus::Active->value, UserStatus::Suspended->value])],
             'mfa_enforced' => ['nullable', 'boolean'],
-            'password' => ['nullable', 'string', 'min:8'],
+            'password' => ['nullable', 'string', Password::min(12)->mixedCase()->numbers()->symbols()],
         ]);
 
         /** @var ClearanceLevel $level */
@@ -270,6 +272,13 @@ class UserManagementController extends Controller
         $targetUser->update($updates);
         $targetUser->syncRoles($validated['roles']);
         $targetUser->syncPermissions($validated['permissions'] ?? []);
+
+        if ($validated['status'] === UserStatus::Suspended->value) {
+            UserSession::query()
+                ->where('user_id', $targetUser->id)
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now()]);
+        }
 
         $validCompIds = Compartment::query()
             ->where('tenant_id', $actor->tenant_id)

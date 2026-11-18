@@ -7,8 +7,16 @@ services:
     restart: unless-stopped
     environment:
       APP_ENV: ${APP_ENV:-production}
+      APP_DEBUG: ${APP_DEBUG:-false}
       APP_KEY: ${APP_KEY:?APP_KEY is required}
       APP_URL: ${APP_URL:-https://betterdoc.lan}
+      LANDING_MODE: ${LANDING_MODE:-portal}
+      BETTERDOC_DEMO_SWITCHER: "false"
+      BETTERDOC_SELF_REGISTRATION: ${BETTERDOC_SELF_REGISTRATION:-false}
+      SESSION_ENCRYPT: "true"
+      SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-true}
+      BETTERDOC_TRUSTED_PROXIES: ${BETTERDOC_TRUSTED_PROXIES:-*}
+      BETTERDOC_ENFORCE_HTTPS: ${BETTERDOC_ENFORCE_HTTPS:-true}
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432

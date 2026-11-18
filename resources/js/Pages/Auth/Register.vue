@@ -214,14 +214,14 @@ function submit(): void {
                             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
                                     <label for="reg-password" class="mb-1 block text-xs font-medium text-slate-300">
-                                        Password * (min 8 characters)
+                                        Password * (min 12 chars: upper, lower, number &amp; symbol)
                                     </label>
                                     <input
                                         id="reg-password"
                                         v-model="form.password"
                                         type="password"
                                         required
-                                        minlength="8"
+                                        minlength="12"
                                         autocomplete="new-password"
                                         class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-white focus:outline-2 focus:outline-white/40"
                                     />
@@ -237,7 +237,7 @@ function submit(): void {
                                         v-model="form.password_confirmation"
                                         type="password"
                                         required
-                                        minlength="8"
+                                        minlength="12"
                                         autocomplete="new-password"
                                         class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-white focus:outline-2 focus:outline-white/40"
                                     />

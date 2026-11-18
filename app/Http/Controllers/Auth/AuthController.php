@@ -181,7 +181,7 @@ class AuthController extends Controller
 
     public function demoLogin(Request $request): RedirectResponse
     {
-        abort_unless((bool) config('betterdoc.demo_switcher_enabled', false), 404);
+        abort_unless((bool) config('betterdoc.demo_switcher_enabled', false) && ! app()->isProduction(), 404);
 
         /** @var array{user_id: string} $validated */
         $validated = $request->validate([

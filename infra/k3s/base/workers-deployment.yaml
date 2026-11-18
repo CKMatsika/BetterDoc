@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: betterdoc-horizon
+  namespace: betterdoc
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: betterdoc-horizon
+  template:
+    metadata:
+      labels:
+        app: betterdoc-horizon
+    spec:
+      containers:
+        - name: horizon
+          image: betterdoc/horizon:local
+          command: ["php", "artisan", "horizon"]
+          envFrom:
+            - configMapRef:
+                name: betterdoc-config
+            - secretRef:
+                name: betterdoc-secrets
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: betterdoc-reverb
+  namespace: betterdoc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: betterdoc-reverb
+  template:
+    metadata:
+      labels:
+        app: betterdoc-reverb
+    spec:
+      containers:
+        - name: reverb
+          image: betterdoc/reverb:local
+          command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8081"]
+          ports:
+            - containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: betterdoc-config
+            - secretRef:
+                name: betterdoc-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: betterdoc-reverb
+  namespace: betterdoc
+spec:
+  selector:
+    app: betterdoc-reverb
+  ports:
+    - port: 8081
+      targetPort: 8081
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: betterdoc-audit-and-backup
+  namespace: betterdoc
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: maintenance
+              image: betterdoc/app:local
+              command:
+                - sh
+                - -c
+                - "php artisan betterdoc:audit:verify && php artisan betterdoc:contracts:scan-alerts && php artisan betterdoc:backup:create --tier=tier1_local --verify-restore"
+              envFrom:
+                - configMapRef:
+                    name: betterdoc-config
+                - secretRef:
+                    name: betterdoc-secrets

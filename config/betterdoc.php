@@ -183,6 +183,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Phase 8: Optional Outbox Sync Gateway & 3-2-1 Encrypted Backup / DR
+    |--------------------------------------------------------------------------
+    */
+    'sync' => [
+        'enabled' => (bool) env('BETTERDOC_SYNC_ENABLED', false),
+        'max_classification_rank' => (int) env('BETTERDOC_SYNC_MAX_RANK', 1),
+        'mirror_disk' => env('BETTERDOC_SYNC_MIRROR_DISK', 'betterdoc_vault'),
+    ],
+
+    'backup' => [
+        'storage_disk' => env('BETTERDOC_BACKUP_DISK', 'betterdoc_vault'),
+        'target_rto_seconds' => (int) env('BETTERDOC_BACKUP_TARGET_RTO', 7200),
+        'retention_days' => (int) env('BETTERDOC_BACKUP_RETENTION_DAYS', 90),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Optional LDAP / Active Directory / FreeIPA Connector
     |--------------------------------------------------------------------------
     */

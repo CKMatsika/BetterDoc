@@ -212,6 +212,7 @@ class CorporateSeeder extends Seeder
             SeedPhase5AiDefaultsHelper::seedDefaults($tenant, $director);
             SeedPhase6PrintScanDefaultsHelper::seedDefaults($tenant, $director);
             SeedPhase7DefaultsHelper::seedDefaults($tenant, $director);
+            SeedPhase8OperationsHelper::seedDefaults($tenant, $director);
         });
 
         if (! app()->runningUnitTests()) {

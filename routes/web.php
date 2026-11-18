@@ -194,5 +194,13 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/compliance/packs/{compliancePack}/verify', [ComplianceController::class, 'verifyPack'])->name('compliance.packs.verify');
         Route::get('/compliance/packs/{compliancePack}/download', [ComplianceController::class, 'downloadPack'])->name('compliance.packs.download');
         Route::get('/compliance/syslog', [ComplianceController::class, 'exportSyslog'])->name('compliance.syslog');
+
+        // Phase 8: Optional Outbox Sync Gateway, 3-2-1 Encrypted Backup & Timed DR Drill
+        Route::get('/admin/operations', [OperationsController::class, 'index'])->name('admin.operations');
+        Route::post('/admin/operations/sync-targets', [OperationsController::class, 'storeSyncTarget'])->name('admin.operations.sync_targets.store');
+        Route::post('/admin/operations/sync-enqueue', [OperationsController::class, 'enqueueSync'])->name('admin.operations.sync_enqueue');
+        Route::post('/admin/operations/sync-process', [OperationsController::class, 'processSync'])->name('admin.operations.sync_process');
+        Route::post('/admin/operations/backups', [OperationsController::class, 'createBackup'])->name('admin.operations.backups.create');
+        Route::post('/admin/operations/backups/{backupSnapshot}/restore-drill', [OperationsController::class, 'restoreDrill'])->name('admin.operations.backups.restore_drill');
     });
 });

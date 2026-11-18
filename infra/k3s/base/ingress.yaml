@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: betterdoc-lan-ingress
+  namespace: betterdoc
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  tls:
+    - hosts:
+        - betterdoc.lan
+      secretName: betterdoc-lan-tls
+  rules:
+    - host: betterdoc.lan
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: betterdoc-app
+                port:
+                  number: 80
+          - path: /app
+            pathType: Prefix
+            backend:
+              service:
+                name: betterdoc-reverb
+                port:
+                  number: 8081

@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: betterdoc-config
+  namespace: betterdoc
+data:
+  APP_NAME: "BetterDoc DMS"
+  APP_ENV: "production"
+  APP_URL: "https://betterdoc.lan"
+  DB_CONNECTION: "pgsql"
+  DB_HOST: "betterdoc-postgres"
+  DB_PORT: "5432"
+  DB_DATABASE: "betterdoc"
+  DB_USERNAME: "betterdoc_app"
+  REDIS_HOST: "betterdoc-valkey"
+  CACHE_STORE: "redis"
+  QUEUE_CONNECTION: "redis"
+  SESSION_DRIVER: "redis"
+  BROADCAST_CONNECTION: "reverb"
+  MEILISEARCH_HOST: "http://betterdoc-meilisearch:7700"
+  BETTERDOC_AIR_GAPPED: "true"
+  BETTERDOC_HOSTING_MODE: "air_gapped_on_prem"
+  BETTERDOC_AV_DRIVER: "clamav"
+  BETTERDOC_CDR_DRIVER: "pdfa_service"
+  BETTERDOC_OCR_URL: "http://betterdoc-ocr:8091"
+  BETTERDOC_PKI_URL: "http://betterdoc-pki:8092"
+  BETTERDOC_SIGNER_URL: "http://betterdoc-signer:8093"
+  BETTERDOC_OLLAMA_URL: "http://betterdoc-ollama:11434"
+  BETTERDOC_COLLABORA_URL: "http://betterdoc-collabora:9980"
+  BETTERDOC_BACKUP_TARGET_RTO: "7200"

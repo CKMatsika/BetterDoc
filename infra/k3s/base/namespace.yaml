@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: betterdoc
+  labels:
+    app.kubernetes.io/part-of: betterdoc-dms
+    pod-security.kubernetes.io/enforce: restricted

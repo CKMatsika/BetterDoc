@@ -256,6 +256,7 @@ class AfzDefenceSeeder extends Seeder
             SeedPhase5AiDefaultsHelper::seedDefaults($tenant, $wgCdr);
             SeedPhase6PrintScanDefaultsHelper::seedDefaults($tenant, $wgCdr);
             SeedPhase7DefaultsHelper::seedDefaults($tenant, $wgCdr);
+            SeedPhase8OperationsHelper::seedDefaults($tenant, $wgCdr);
 
             return $secretOps;
         });

@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: betterdoc-postgres
+  namespace: betterdoc
+spec:
+  serviceName: betterdoc-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: betterdoc-postgres
+  template:
+    metadata:
+      labels:
+        app: betterdoc-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: pgvector/pgvector:pg17
+          args:
+            - "-c"
+            - "synchronous_commit=on"
+            - "-c"
+            - "full_page_writes=on"
+            - "-c"
+            - "wal_level=replica"
+            - "-c"
+            - "archive_mode=on"
+            - "-c"
+            - "archive_command=test ! -f /wal_archive/%f && cp %p /wal_archive/%f"
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: betterdoc
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: betterdoc-secrets
+                  key: DB_ADMIN_USERNAME
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: betterdoc-secrets
+                  key: DB_ADMIN_PASSWORD
+          volumeMounts:
+            - name: pg-data
+              mountPath: /var/lib/postgresql/data
+            - name: pg-wal
+              mountPath: /wal_archive
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U postgres -d betterdoc"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: pg-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 200Gi
+    - metadata:
+        name: pg-wal
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 100Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: betterdoc-postgres
+  namespace: betterdoc
+spec:
+  selector:
+    app: betterdoc-postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: betterdoc-minio
+  namespace: betterdoc
+spec:
+  serviceName: betterdoc-minio
+  replicas: 1
+  selector:
+    matchLabels:
+      app: betterdoc-minio
+  template:
+    metadata:
+      labels:
+        app: betterdoc-minio
+    spec:
+      containers:
+        - name: minio
+          image: minio/minio:latest
+          args: ["server", "/data", "--console-address", ":9001"]
+          ports:
+            - containerPort: 9000
+            - containerPort: 9001
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: betterdoc-secrets
+                  key: MINIO_ROOT_USER
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: betterdoc-secrets
+                  key: MINIO_ROOT_PASSWORD
+          volumeMounts:
+            - name: minio-data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: minio-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Ti
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: betterdoc-minio
+  namespace: betterdoc
+spec:
+  selector:
+    app: betterdoc-minio
+  ports:
+    - name: s3
+      port: 9000
+      targetPort: 9000
+    - name: console
+      port: 9001
+      targetPort: 9001

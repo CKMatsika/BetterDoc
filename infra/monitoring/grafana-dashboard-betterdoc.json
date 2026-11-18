@@ -1,0 +1,44 @@
+{
+  "title": "BetterDoc DMS — Air-Gapped Operations & Security SLOs",
+  "uid": "betterdoc-ops-v1",
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Immutable Audit Chain Status",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "targets": [{ "expr": "betterdoc_audit_chain_valid" }]
+    },
+    {
+      "id": 2,
+      "title": "Full-Text Search p95 Latency (ms, Target < 1000ms)",
+      "type": "timeseries",
+      "gridPos": { "x": 6, "y": 0, "w": 9, "h": 4 },
+      "targets": [{ "expr": "histogram_quantile(0.95, rate(betterdoc_search_duration_ms_bucket[5m]))" }]
+    },
+    {
+      "id": 3,
+      "title": "Last Backup Restore Drill Duration (ms, RTO < 7200000ms)",
+      "type": "stat",
+      "gridPos": { "x": 15, "y": 0, "w": 9, "h": 4 },
+      "targets": [{ "expr": "betterdoc_last_restore_drill_ms" }]
+    },
+    {
+      "id": 4,
+      "title": "Queue Jobs Processed (OCR, CDR, ZIMRA FDMS, Outbox Sync)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 6 },
+      "targets": [{ "expr": "rate(betterdoc_horizon_processed_jobs_total[5m])" }]
+    },
+    {
+      "id": 5,
+      "title": "Security Policy Blocks (Clearance, Write-Down, Air-Gap Egress)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 6 },
+      "targets": [{ "expr": "rate(betterdoc_security_blocks_total[5m])" }]
+    }
+  ]
+}

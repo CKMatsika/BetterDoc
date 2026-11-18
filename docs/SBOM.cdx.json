@@ -1,0 +1,44 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:0328e3aa-8d20-4690-8c62-e92d18ba6764",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-11-18T12:00:00Z",
+    "component": {
+      "type": "application",
+      "name": "betterdoc-dms",
+      "version": "1.0.0"
+    }
+  },
+  "components": [
+    { "type": "library", "name": "laravel/framework", "version": "13.42.0", "purl": "pkg:composer/laravel/framework@13.42.0" },
+    { "type": "library", "name": "inertiajs/inertia-laravel", "version": "3.7.0", "purl": "pkg:composer/inertiajs/inertia-laravel@3.7.0" },
+    { "type": "library", "name": "laravel/fortify", "version": "1.42.0", "purl": "pkg:composer/laravel/fortify@1.42.0" },
+    { "type": "library", "name": "laravel/horizon", "version": "5.51.0", "purl": "pkg:composer/laravel/horizon@5.51.0" },
+    { "type": "library", "name": "laravel/octane", "version": "2.24.0", "purl": "pkg:composer/laravel/octane@2.24.0" },
+    { "type": "library", "name": "laravel/pennant", "version": "1.27.0", "purl": "pkg:composer/laravel/pennant@1.27.0" },
+    { "type": "library", "name": "laravel/reverb", "version": "1.13.0", "purl": "pkg:composer/laravel/reverb@1.13.0" },
+    { "type": "library", "name": "laravel/sanctum", "version": "4.4.0", "purl": "pkg:composer/laravel/sanctum@4.4.0" },
+    { "type": "library", "name": "laravel/scout", "version": "11.10.0", "purl": "pkg:composer/laravel/scout@11.10.0" },
+    { "type": "library", "name": "spatie/laravel-permission", "version": "8.5.0", "purl": "pkg:composer/spatie/laravel-permission@8.5.0" },
+    { "type": "library", "name": "spatie/laravel-activitylog", "version": "5.1.5", "purl": "pkg:composer/spatie/laravel-activitylog@5.1.5" },
+    { "type": "library", "name": "lbuchs/webauthn", "version": "2.2.0", "purl": "pkg:composer/lbuchs/webauthn@2.2.0" },
+    { "type": "library", "name": "pragmarx/google2fa", "version": "9.1.0", "purl": "pkg:composer/pragmarx/google2fa@9.1.0" },
+    { "type": "library", "name": "bacon/bacon-qr-code", "version": "3.1.1", "purl": "pkg:composer/bacon/bacon-qr-code@3.1.1" },
+    { "type": "library", "name": "meilisearch/meilisearch-php", "version": "1.17.0", "purl": "pkg:composer/meilisearch/meilisearch-php@1.17.0" },
+    { "type": "library", "name": "league/flysystem-aws-s3-v3", "version": "3.35.3", "purl": "pkg:composer/league/flysystem-aws-s3-v3@3.35.3" },
+    { "type": "library", "name": "smalot/pdfparser", "version": "2.13.1", "purl": "pkg:composer/smalot/pdfparser@2.13.1" },
+    { "type": "library", "name": "symfony/yaml", "version": "8.1.11", "purl": "pkg:composer/symfony/yaml@8.1.11" },
+    { "type": "library", "name": "vue", "version": "^3.5.30", "purl": "pkg:npm/vue@3.5.30" },
+    { "type": "library", "name": "@inertiajs/vue3", "version": "^2.3.19", "purl": "pkg:npm/%40inertiajs/vue3@2.3.19" },
+    { "type": "library", "name": "tailwindcss", "version": "^4.0.0", "purl": "pkg:npm/tailwindcss@4.0.0" },
+    { "type": "library", "name": "pdfjs-dist", "version": "^5.6.205", "purl": "pkg:npm/pdfjs-dist@5.6.205" },
+    { "type": "library", "name": "pyhanko", "version": "0.26.0", "purl": "pkg:pypi/pyhanko@0.26.0" },
+    { "type": "library", "name": "pyhanko-certvalidator", "version": "0.26.8", "purl": "pkg:pypi/pyhanko-certvalidator@0.26.8" },
+    { "type": "library", "name": "python-pkcs11", "version": "0.7.0", "purl": "pkg:pypi/python-pkcs11@0.7.0" },
+    { "type": "library", "name": "cryptography", "version": "45.0.3", "purl": "pkg:pypi/cryptography@45.0.3" },
+    { "type": "library", "name": "ocrmypdf", "version": "16.7.0", "purl": "pkg:pypi/ocrmypdf@16.7.0" },
+    { "type": "library", "name": "pymupdf", "version": "1.25.2", "purl": "pkg:pypi/pymupdf@1.25.2" }
+  ]
+}

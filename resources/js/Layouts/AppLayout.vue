@@ -16,6 +16,7 @@ import {
     LogOut,
     Printer,
     Receipt,
+    Server,
     ShieldCheck,
     SlidersHorizontal,
     UserCheck,
@@ -91,6 +92,7 @@ const navItems = computed(() => [
     { label: 'Approvals & Break-Glass', href: '/approvals', icon: UserCheck, badge: props.value.pendingApprovalsCount ?? 0 },
     { label: 'PKI & Certificates', href: '/pki/certificates', icon: Award, badge: 0 },
     { label: 'Audit Ledger', href: '/audit', icon: ShieldCheck, badge: 0 },
+    { label: 'Sync, Backup & DR', href: '/admin/operations', icon: Server, badge: 0 },
     { label: 'Profiles & Security', href: '/admin/profiles', icon: SlidersHorizontal, badge: 0 },
     { label: 'MFA & Devices', href: '/security/mfa/setup', icon: KeyRound, badge: 0 },
 ]);

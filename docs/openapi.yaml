@@ -1,0 +1,173 @@
+openapi: 3.1.0
+info:
+  title: BetterDoc DMS API
+  version: "1.0.0"
+  description: Air-gap capable, Bell-LaPadula MAC-enforced Enterprise Document Management System API.
+servers:
+  - url: https://betterdoc.lan
+    description: On-Premise Air-Gapped Appliance
+  - url: http://127.0.0.1:8090
+    description: Local Development Preview Server
+paths:
+  /login:
+    post:
+      summary: Authenticate user and initiate MFA session
+      responses:
+        "302":
+          description: Redirects to MFA challenge or dashboard
+  /documents:
+    get:
+      summary: List cleared documents with PostgreSQL RLS + Full-Text Search
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Inertia / JSON document search response
+    post:
+      summary: Create document record (MAC & write-down enforced)
+      responses:
+        "201":
+          description: Document created
+  /documents/{document}:
+    get:
+      summary: View document details and version history (404 when unauthorized)
+      parameters:
+        - name: document
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Document payload
+        "404":
+          description: Masked by PostgreSQL RLS / authorization check
+  /uploads/init:
+    post:
+      summary: Initiate resumable chunked encrypted upload session
+      responses:
+        "201":
+          description: Upload session UUID returned
+  /uploads/{uploadSession}/chunks/{partIndex}:
+    put:
+      summary: Upload individual byte chunk to quarantine staging
+      parameters:
+        - name: uploadSession
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: partIndex
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Chunk recorded
+  /uploads/{uploadSession}/complete:
+    post:
+      summary: Assemble chunks, run malware/CDR/OCR, encrypt & version document
+      parameters:
+        - name: uploadSession
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Document version sealed
+  /documents/{document}/envelopes:
+    post:
+      summary: Create PAdES / Electronic signature envelope
+      parameters:
+        - name: document
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Envelope created
+  /verify/{token}:
+    get:
+      summary: Offline/LAN QR public cryptographic verification page
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Signature verification certificate status
+  /ai/chat:
+    post:
+      summary: Execute air-gapped Hybrid RAG query with High-Water-Mark enforcement
+      responses:
+        "200":
+          description: Grounded answer and cleared citations
+  /finance/invoices:
+    post:
+      summary: Capture vendor invoice, execute 2/3-way PO+GRN match & duplicate guard
+      responses:
+        "201":
+          description: Matched, VarianceFlagged, or DuplicateBlocked AP invoice
+  /finance/invoices/{apInvoice}/fiscalize:
+    post:
+      summary: Submit or queue ZIMRA FDMS fiscal receipt
+      parameters:
+        - name: apInvoice
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: ZIMRA fiscal status updated
+  /compliance/packs:
+    post:
+      summary: Generate signed & encrypted Regulator Compliance Bundle ZIP
+      responses:
+        "201":
+          description: CompliancePack created
+  /compliance/packs/{compliancePack}/verify:
+    get:
+      summary: Verify pack manifest SHA-256, archive files, hash chain, and checkpoint HMACs
+      parameters:
+        - name: compliancePack
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Cryptographic verification report
+  /admin/operations/backups:
+    post:
+      summary: Create encrypted 3-2-1 backup snapshot
+      responses:
+        "201":
+          description: Snapshot created
+  /admin/operations/backups/{backupSnapshot}/restore-drill:
+    post:
+      summary: Run timed <2h clean-machine restore verification drill
+      parameters:
+        - name: backupSnapshot
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Timed DR verification report

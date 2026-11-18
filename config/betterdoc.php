@@ -158,6 +158,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Finance AP Automation (2/3-Way Matching, UBL 2.1, ZIMRA FDMS) & Compliance
+    |--------------------------------------------------------------------------
+    */
+    'finance' => [
+        'ap' => [
+            'price_variance_tolerance_pct' => (float) env('BETTERDOC_AP_PRICE_TOL_PCT', 2.0),
+            'qty_variance_tolerance_pct' => (float) env('BETTERDOC_AP_QTY_TOL_PCT', 0.0),
+            'high_value_approval_cents' => (int) env('BETTERDOC_AP_HIGH_VALUE_CENTS', 1000000),
+        ],
+        'zimra' => [
+            'driver' => env('BETTERDOC_ZIMRA_DRIVER', 'offline_queue'), // offline_queue | fdms_http
+            'fdms_url' => env('BETTERDOC_ZIMRA_FDMS_URL', 'http://127.0.0.1:8095'),
+            'device_id' => env('BETTERDOC_ZIMRA_DEVICE_ID', 'FDMS-ZW-001'),
+        ],
+    ],
+
+    'compliance' => [
+        'siem_syslog_enabled' => (bool) env('BETTERDOC_SIEM_ENABLED', false),
+        'siem_syslog_host' => env('BETTERDOC_SIEM_HOST', '127.0.0.1'),
+        'siem_syslog_port' => (int) env('BETTERDOC_SIEM_PORT', 5140),
+        'siem_app_name' => env('BETTERDOC_SIEM_APP', 'betterdoc-dms'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Optional LDAP / Active Directory / FreeIPA Connector
     |--------------------------------------------------------------------------
     */

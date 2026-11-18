@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Enums\BetterDocRole;
 use App\Models\AuditCheckpoint;
 use App\Models\AuditEvent;
+use App\Models\CompliancePack;
 use App\Models\User;
 use App\Services\Audit\ImmutableAuditLogger;
 use Illuminate\Http\RedirectResponse;
@@ -45,6 +46,7 @@ class AuditController extends Controller
             ->all();
 
         $verification = $this->audit->verifyChain($tenant);
+        $checkpointVerification = $this->audit->verifyCheckpoints($tenant);
         $checkpoints = AuditCheckpoint::query()
             ->where('tenant_id', $user->tenant_id)
             ->latest()
@@ -52,10 +54,32 @@ class AuditController extends Controller
             ->get()
             ->toArray();
 
+        $compliancePacks = CompliancePack::query()
+            ->with(['generator'])
+            ->where('tenant_id', $user->tenant_id)
+            ->latest()
+            ->limit(20)
+            ->get()
+            ->map(static fn (CompliancePack $p): array => [
+                'id' => $p->id,
+                'pack_name' => $p->pack_name,
+                'regulation_standard' => $p->regulation_standard,
+                'event_count' => $p->event_count,
+                'head_hash' => $p->head_hash,
+                'manifest_sha256' => $p->manifest_sha256,
+                'generator_name' => $p->generator?->name,
+                'created_at' => $p->created_at?->toIso8601String(),
+            ])
+            ->values()
+            ->all();
+
         return Inertia::render('Audit/Index', [
             'events' => $events,
             'verification' => $verification,
+            'checkpointVerification' => $checkpointVerification,
             'checkpoints' => $checkpoints,
+            'compliancePacks' => $compliancePacks,
+            'canExportCompliance' => $user->hasAnyRole([BetterDocRole::Auditor->value, BetterDocRole::SystemAdmin->value]),
         ]);
     }
 

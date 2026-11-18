@@ -168,5 +168,31 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/print-scan/agents/pair-init', [PrintScanController::class, 'initiateAgentPairing'])->name('print_scan.agents.pair_init');
         Route::post('/print-scan/agents/{localAgent}/revoke', [PrintScanController::class, 'revokeAgent'])->name('print_scan.agents.revoke');
         Route::get('/print-scan/agents/download-script', [PrintScanController::class, 'downloadAgentScript'])->name('print_scan.agents.script');
+
+        // Phase 7: Finance / AP Automation, ZIMRA E-Invoicing, Contracts, HR Vault & Compliance Packs
+        Route::get('/finance', [FinanceController::class, 'index'])->name('finance.index');
+        Route::post('/finance/vendors', [FinanceController::class, 'storeVendor'])->name('finance.vendors.store');
+        Route::post('/finance/purchase-orders', [FinanceController::class, 'storePurchaseOrder'])->name('finance.pos.store');
+        Route::post('/finance/purchase-orders/{purchaseOrder}/receipts', [FinanceController::class, 'storeGoodsReceipt'])->name('finance.receipts.store');
+        Route::post('/finance/invoices', [FinanceController::class, 'storeInvoice'])->name('finance.invoices.store');
+        Route::post('/finance/invoices/{apInvoice}/approve', [FinanceController::class, 'approveInvoice'])->name('finance.invoices.approve');
+        Route::get('/finance/invoices/{apInvoice}/ubl', [FinanceController::class, 'exportUbl'])->name('finance.invoices.ubl');
+        Route::post('/finance/invoices/{apInvoice}/fiscalize', [FinanceController::class, 'fiscalizeZimra'])->name('finance.invoices.fiscalize');
+
+        Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
+        Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
+        Route::post('/contracts/clauses', [ContractController::class, 'storeClause'])->name('contracts.clauses.store');
+        Route::post('/contracts/{contract}/obligations', [ContractController::class, 'storeObligation'])->name('contracts.obligations.store');
+        Route::post('/contracts/obligations/{contractObligation}/complete', [ContractController::class, 'completeObligation'])->name('contracts.obligations.complete');
+        Route::post('/contracts/scan-alerts', [ContractController::class, 'scanAlerts'])->name('contracts.scan_alerts');
+
+        Route::get('/hr', [HrController::class, 'index'])->name('hr.index');
+        Route::post('/hr/employees', [HrController::class, 'storeEmployee'])->name('hr.employees.store');
+        Route::post('/hr/records', [HrController::class, 'storeRecord'])->name('hr.records.store');
+
+        Route::post('/compliance/packs', [ComplianceController::class, 'generatePack'])->name('compliance.packs.generate');
+        Route::get('/compliance/packs/{compliancePack}/verify', [ComplianceController::class, 'verifyPack'])->name('compliance.packs.verify');
+        Route::get('/compliance/packs/{compliancePack}/download', [ComplianceController::class, 'downloadPack'])->name('compliance.packs.download');
+        Route::get('/compliance/syslog', [ComplianceController::class, 'exportSyslog'])->name('compliance.syslog');
     });
 });

@@ -201,6 +201,48 @@ class ImmutableAuditLogger
     }
 
     /**
+     * Verify HMAC-SHA256 signatures across all anchored audit checkpoints for a tenant.
+     *
+     * @return array{valid: bool, checked: int, failed_id: string|null, reason: string|null}
+     */
+    public function verifyCheckpoints(Tenant $tenant): array
+    {
+        $checkpoints = AuditCheckpoint::query()
+            ->where('tenant_id', $tenant->id)
+            ->orderBy('created_at')
+            ->get();
+
+        $checked = 0;
+        foreach ($checkpoints as $cp) {
+            $checked++;
+            $payload = implode('|', [
+                $cp->tenant_id,
+                (string) $cp->first_seq_id,
+                (string) $cp->last_seq_id,
+                (string) $cp->event_count,
+                $cp->head_hash,
+            ]);
+            $expectedSig = hash_hmac('sha256', $payload, config()->string('app.key'));
+
+            if (! hash_equals($expectedSig, $cp->signature_hmac)) {
+                return [
+                    'valid' => false,
+                    'checked' => $checked,
+                    'failed_id' => $cp->id,
+                    'reason' => "Checkpoint HMAC signature mismatch ({$cp->id}).",
+                ];
+            }
+        }
+
+        return [
+            'valid' => true,
+            'checked' => $checked,
+            'failed_id' => null,
+            'reason' => null,
+        ];
+    }
+
+    /**
      * Mask classified document details in audit payloads when viewer clearance is lower.
      *
      * @return array<string, mixed>

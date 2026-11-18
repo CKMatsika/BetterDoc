@@ -209,6 +209,7 @@ class CorporateSeeder extends Seeder
             $seedDoc('ZC/EXEC/2026/009', 'Board Acquisition & Capex Allocation Memorandum Q4', 'Confidential executive capex review and warehouse expansion budget.', $cabExec, $folderBoard, $hq, $director, 2, ['EXEC']);
 
             SeedPhase4DefaultsHelper::seedDefaults($tenant, $director);
+            SeedPhase5AiDefaultsHelper::seedDefaults($tenant, $director);
         });
 
         if (! app()->runningUnitTests()) {

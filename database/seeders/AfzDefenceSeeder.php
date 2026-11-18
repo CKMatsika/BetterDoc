@@ -253,6 +253,7 @@ class AfzDefenceSeeder extends Seeder
             }
 
             SeedPhase4DefaultsHelper::seedDefaults($tenant, $wgCdr);
+            SeedPhase5AiDefaultsHelper::seedDefaults($tenant, $wgCdr);
 
             return $secretOps;
         });

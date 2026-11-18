@@ -4,6 +4,7 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, AlertTriangle, Archive, Download, FileEdit, GitCompare, GitFork, Lock, RotateCcw, Share2, Shield, ShieldCheck, Trash2, Unlock } from '@lucide/vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ClassificationBadge from '@/Components/ClassificationBadge.vue';
+import DocumentAiPanel from '@/Components/DocumentAiPanel.vue';
 import DocumentCollaborationPanel from '@/Components/DocumentCollaborationPanel.vue';
 import PdfWatermarkViewer from '@/Components/PdfWatermarkViewer.vue';
 import ResumableUploader from '@/Components/ResumableUploader.vue';
@@ -557,6 +558,9 @@ function requestDelete(): void {
                             </button>
                         </div>
                     </div>
+
+                    <!-- Local-First AI Document Actions -->
+                    <DocumentAiPanel :document-id="document.id" />
                 </div>
             </div>
         </div>

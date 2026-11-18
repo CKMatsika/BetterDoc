@@ -120,6 +120,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Local-First AI, IDP, Pre-Filtered Hybrid RAG & Anomaly Detection
+    |--------------------------------------------------------------------------
+    */
+    'ai' => [
+        'driver' => env('SENTINEL_AI_DRIVER', 'local_hybrid'), // local_hybrid | ollama | cloud_openai
+        'ollama_url' => env('SENTINEL_OLLAMA_URL', 'http://ollama:11434'),
+        'chat_model' => env('SENTINEL_AI_CHAT_MODEL', 'qwen2.5:7b-instruct'),
+        'embed_model' => env('SENTINEL_AI_EMBED_MODEL', 'bge-m3'),
+        'vision_model' => env('SENTINEL_AI_VISION_MODEL', 'qwen2.5vl'),
+        'translation_model' => env('SENTINEL_AI_TRANSLATION_MODEL', 'nllb-200'),
+        'cloud_ai_enabled' => (bool) env('SENTINEL_CLOUD_AI_ENABLED', false),
+        'cloud_endpoint' => env('SENTINEL_CLOUD_AI_ENDPOINT', ''),
+        'embedding_dims' => (int) env('SENTINEL_AI_EMBED_DIMS', 128),
+        'anomaly' => [
+            'bulk_download_threshold' => (int) env('SENTINEL_ANOMALY_BULK_DOWNLOADS', 5),
+            'bulk_view_threshold' => (int) env('SENTINEL_ANOMALY_BULK_VIEWS', 25),
+            'window_minutes' => (int) env('SENTINEL_ANOMALY_WINDOW_MINUTES', 15),
+            'business_hours_start' => env('SENTINEL_BUSINESS_HOURS_START', '06:00'),
+            'business_hours_end' => env('SENTINEL_BUSINESS_HOURS_END', '19:00'),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Optional LDAP / Active Directory / FreeIPA Connector
     |--------------------------------------------------------------------------
     */

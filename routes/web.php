@@ -137,5 +137,15 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/documents/{document}/governance/worm-lock', [GovernanceController::class, 'lockWorm'])->name('documents.governance.worm_lock');
         Route::post('/documents/{document}/governance/disposition', [GovernanceController::class, 'initiateDisposition'])->name('documents.governance.disposition');
         Route::post('/admin/users/{targetUser}/clearance', [GovernanceController::class, 'updateUserClearance'])->name('admin.users.clearance');
+
+        // Phase 5: Local-First AI, IDP Review Queue, Pre-Filtered Hybrid RAG & Anomaly Alerts
+        Route::get('/ai', [AiController::class, 'index'])->name('ai.index');
+        Route::post('/ai/chat', [AiController::class, 'chat'])->name('ai.chat');
+        Route::post('/ai/sessions/{aiChatSession}/export-draft', [AiController::class, 'exportDraft'])->name('ai.export_draft');
+        Route::post('/documents/{document}/ai/idp', [AiController::class, 'runIdp'])->name('documents.ai.idp');
+        Route::post('/ai/idp/{idpExtraction}/review', [AiController::class, 'reviewIdp'])->name('ai.idp.review');
+        Route::post('/documents/{document}/ai/action', [AiController::class, 'documentAction'])->name('documents.ai.action');
+        Route::post('/ai/anomalies/scan', [AiController::class, 'scanAnomalies'])->name('ai.anomalies.scan');
+        Route::post('/ai/anomalies/{aiAnomalyAlert}/status', [AiController::class, 'updateAnomalyStatus'])->name('ai.anomalies.status');
     });
 });

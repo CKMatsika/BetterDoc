@@ -205,6 +205,18 @@ services:
     networks:
       - sentinel_internal
 
+  ollama:
+    image: ollama/ollama:0.6.2
+    restart: unless-stopped
+    environment:
+      OLLAMA_NO_TELEMETRY: "1"
+    mem_limit: 8192m
+    pids_limit: 256
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - sentinel_internal
+
   collabora:
     image: collabora/code:24.04.10.2.1
     restart: unless-stopped
@@ -269,6 +281,7 @@ volumes:
   minio_data:
   clamav_db:
   pki_data:
+  ollama_data:
   prom_data:
   loki_data:
   grafana_data:

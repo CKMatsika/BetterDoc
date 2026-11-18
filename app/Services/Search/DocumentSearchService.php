@@ -7,11 +7,16 @@ namespace App\Services\Search;
 use App\Models\Compartment;
 use App\Models\Document;
 use App\Models\User;
+use App\Services\Ai\ChunkIndexingService;
 use Illuminate\Support\Facades\DB;
 use Meilisearch\Client;
 
 class DocumentSearchService
 {
+    public function __construct(
+        private readonly ?ChunkIndexingService $chunks = null,
+    ) {}
+
     /**
      * Permission-safe full-text search across cleared documents only (PostgreSQL GIN FTS + RLS or Meilisearch).
      *
@@ -76,6 +81,8 @@ class DocumentSearchService
 
     public function indexDocument(Document $document): void
     {
+        $this->chunks?->indexDocument($document);
+
         if (config()->string('sentinel.search.driver', 'postgres') !== 'meilisearch') {
             return;
         }

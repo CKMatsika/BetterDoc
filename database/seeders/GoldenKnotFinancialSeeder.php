@@ -213,6 +213,7 @@ class GoldenKnotFinancialSeeder extends Seeder
             $seedDoc('GK/HR/2026/044', 'Confidential HR Inquiry — Credit Policy Deviation', 'Restricted HR review shielded from the subject employee.', $cabTreasury, $folderAml, $branch, $cro, 2, ['HR'], $analyst, true);
 
             SeedPhase4DefaultsHelper::seedDefaults($tenant, $cro);
+            SeedPhase5AiDefaultsHelper::seedDefaults($tenant, $cro);
         });
 
         if (! app()->runningUnitTests()) {

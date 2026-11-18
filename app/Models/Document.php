@@ -249,4 +249,20 @@ class Document extends Model
     {
         return $this->hasMany(DispositionReview::class)->latest();
     }
+
+    /**
+     * @return HasMany<DocumentChunk, $this>
+     */
+    public function chunks(): HasMany
+    {
+        return $this->hasMany(DocumentChunk::class)->orderBy('chunk_index');
+    }
+
+    /**
+     * @return HasMany<IdpExtraction, $this>
+     */
+    public function idpExtractions(): HasMany
+    {
+        return $this->hasMany(IdpExtraction::class)->latest();
+    }
 }

@@ -251,6 +251,8 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/admin/integrations/tokens', [IntegrationHubController::class, 'storeToken'])->name('admin.integrations.tokens.store');
         Route::delete('/admin/integrations/tokens/{tokenId}', [IntegrationHubController::class, 'destroyToken'])->name('admin.integrations.tokens.destroy');
         Route::post('/admin/integrations/connections', [IntegrationHubController::class, 'storeConnection'])->name('admin.integrations.connections.store');
+        Route::post('/admin/integrations/connections/{connection}/sync', [IntegrationHubController::class, 'runConnectionSync'])->name('admin.integrations.connections.sync');
+        Route::patch('/admin/integrations/connections/{connection}/mapping', [IntegrationHubController::class, 'updateConnectionMapping'])->name('admin.integrations.connections.mapping');
         Route::post('/admin/integrations/webhooks', [IntegrationHubController::class, 'storeWebhook'])->name('admin.integrations.webhooks.store');
         Route::post('/admin/integrations/webhooks/test', [IntegrationHubController::class, 'testWebhook'])->name('admin.integrations.webhooks.test');
         Route::post('/admin/integrations/import/belina-employees', [IntegrationHubController::class, 'importBelinaCsv'])->name('admin.integrations.import.belina');

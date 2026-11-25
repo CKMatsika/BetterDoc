@@ -76,4 +76,12 @@ class IntegrationConnection extends Model
     {
         return $this->hasMany(IntegrationWebhook::class);
     }
+
+    /**
+     * @return HasMany<IntegrationSyncRun, $this>
+     */
+    public function syncRuns(): HasMany
+    {
+        return $this->hasMany(IntegrationSyncRun::class);
+    }
 }

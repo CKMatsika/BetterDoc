@@ -9,9 +9,11 @@ use App\Enums\ErpSystemType;
 use App\Models\ExternalMapping;
 use App\Models\IntegrationConnection;
 use App\Models\IntegrationDelivery;
+use App\Models\IntegrationSyncRun;
 use App\Models\IntegrationWebhook;
 use App\Models\User;
 use App\Services\Audit\ImmutableAuditLogger;
+use App\Services\Integration\Connectors\ErpConnectorManager;
 use App\Services\Integration\ErpBatchSyncService;
 use App\Services\Integration\IntegrationWebhookService;
 use App\Services\Security\PermissionCatalog;
@@ -40,6 +42,7 @@ class IntegrationHubController extends Controller
     public function __construct(
         private readonly ErpBatchSyncService $batchSync,
         private readonly IntegrationWebhookService $webhooks,
+        private readonly ErpConnectorManager $connectors,
         private readonly ImmutableAuditLogger $audit,
     ) {}
 
@@ -74,8 +77,30 @@ class IntegrationHubController extends Controller
                 'system_label' => $c->system_type->label(),
                 'transport' => $c->transport,
                 'base_url' => $c->base_url,
+                'field_mapping' => $c->field_mapping_json ?? [],
+                'supports_cloud_sync' => in_array($c->system_type, [ErpSystemType::Xero, ErpSystemType::Netsuite], true),
                 'is_active' => $c->is_active,
                 'last_sync_at' => $c->last_sync_at?->toIso8601String(),
+            ])
+            ->values()
+            ->all();
+
+        $syncRuns = IntegrationSyncRun::query()
+            ->with(['connection'])
+            ->where('tenant_id', $actor->tenant_id)
+            ->latest()
+            ->limit(25)
+            ->get()
+            ->map(static fn (IntegrationSyncRun $run): array => [
+                'id' => $run->id,
+                'connection_name' => $run->connection->name ?? 'Connector',
+                'system_type' => $run->connection !== null ? $run->connection->system_type->value : '',
+                'direction' => $run->direction,
+                'status' => $run->status,
+                'records_processed' => $run->records_processed,
+                'records_failed' => $run->records_failed,
+                'error_message' => $run->error_message,
+                'finished_at' => $run->finished_at?->toIso8601String(),
             ])
             ->values()
             ->all();
@@ -132,6 +157,7 @@ class IntegrationHubController extends Controller
             'tokens' => $tokens,
             'availableAbilities' => self::API_ABILITIES,
             'connections' => $connections,
+            'syncRuns' => $syncRuns,
             'webhooks' => $webhooks,
             'deliveries' => $deliveries,
             'mappings' => $mappings,
@@ -205,14 +231,58 @@ class IntegrationHubController extends Controller
         $actor = $request->user();
         $this->authorizeIntegrations($actor);
 
-        /** @var array{name: string, system_type: string, transport: string, base_url?: string|null, api_key?: string|null} $validated */
+        /** @var array{
+         *   name: string,
+         *   system_type: string,
+         *   transport: string,
+         *   base_url?: string|null,
+         *   api_key?: string|null,
+         *   access_token?: string|null,
+         *   xero_tenant_id?: string|null,
+         *   account_id?: string|null,
+         *   consumer_key?: string|null,
+         *   consumer_secret?: string|null,
+         *   token_id?: string|null,
+         *   token_secret?: string|null,
+         *   default_expense_account?: string|null,
+         *   default_tax_type?: string|null,
+         *   subsidiary_id?: string|null
+         * } $validated
+         */
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:120'],
             'system_type' => ['required', Rule::in(ErpSystemType::values())],
             'transport' => ['required', Rule::in(['rest_api', 'webhook', 'csv_batch', 'local_bridge'])],
             'base_url' => ['nullable', 'url', 'max:500'],
             'api_key' => ['nullable', 'string', 'max:2000'],
+            'access_token' => ['nullable', 'string', 'max:4000'],
+            'xero_tenant_id' => ['nullable', 'string', 'max:120'],
+            'account_id' => ['nullable', 'string', 'max:120'],
+            'consumer_key' => ['nullable', 'string', 'max:500'],
+            'consumer_secret' => ['nullable', 'string', 'max:500'],
+            'token_id' => ['nullable', 'string', 'max:500'],
+            'token_secret' => ['nullable', 'string', 'max:500'],
+            'default_expense_account' => ['nullable', 'string', 'max:64'],
+            'default_tax_type' => ['nullable', 'string', 'max:64'],
+            'subsidiary_id' => ['nullable', 'string', 'max:64'],
         ]);
+
+        $creds = array_filter([
+            'api_key' => $validated['api_key'] ?? null,
+            'access_token' => $validated['access_token'] ?? null,
+            'xero_tenant_id' => $validated['xero_tenant_id'] ?? null,
+            'account_id' => $validated['account_id'] ?? null,
+            'consumer_key' => $validated['consumer_key'] ?? null,
+            'consumer_secret' => $validated['consumer_secret'] ?? null,
+            'token_id' => $validated['token_id'] ?? null,
+            'token_secret' => $validated['token_secret'] ?? null,
+        ], static fn (?string $v): bool => is_string($v) && trim($v) !== '');
+
+        $mapping = array_filter([
+            'default_expense_account' => $validated['default_expense_account'] ?? null,
+            'default_tax_type' => $validated['default_tax_type'] ?? null,
+            'subsidiary_id' => $validated['subsidiary_id'] ?? null,
+        ], static fn (?string $v): bool => is_string($v) && trim($v) !== '');
 
         IntegrationConnection::query()->create([
             'tenant_id' => $actor->tenant_id,
@@ -221,13 +291,65 @@ class IntegrationHubController extends Controller
             'system_type' => $validated['system_type'],
             'transport' => $validated['transport'],
             'base_url' => isset($validated['base_url']) && trim($validated['base_url']) !== '' ? trim($validated['base_url']) : null,
-            'credentials_encrypted' => ! empty($validated['api_key'])
-                ? json_encode(['api_key' => $validated['api_key']], JSON_THROW_ON_ERROR)
-                : null,
+            'credentials_encrypted' => $creds !== [] ? json_encode($creds, JSON_THROW_ON_ERROR) : null,
+            'field_mapping_json' => $mapping !== [] ? $mapping : null,
             'is_active' => true,
         ]);
 
         return back()->with('success', "Connector '{$validated['name']}' saved.");
+    }
+
+    public function runConnectionSync(Request $request, IntegrationConnection $connection): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+        $this->authorizeIntegrations($actor);
+        abort_unless($connection->tenant_id === $actor->tenant_id, 404);
+
+        /** @var array{direction: string} $validated */
+        $validated = $request->validate([
+            'direction' => ['required', Rule::in(['test_connection', 'pull_vendors', 'pull_purchase_orders', 'push_invoices'])],
+        ]);
+
+        $run = $this->connectors->runSync($connection, $actor, $validated['direction'], $request);
+
+        if ($run->status === 'blocked_airgap') {
+            return back()->with('error', "Sync blocked by air-gap policy: {$run->error_message}");
+        }
+
+        if ($run->status === 'failed') {
+            return back()->with('error', "Sync failed: {$run->error_message}");
+        }
+
+        return back()->with(
+            'success',
+            "{$connection->name} ({$run->direction}) completed: {$run->records_processed} processed, {$run->records_failed} failed."
+        );
+    }
+
+    public function updateConnectionMapping(Request $request, IntegrationConnection $connection): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+        $this->authorizeIntegrations($actor);
+        abort_unless($connection->tenant_id === $actor->tenant_id, 404);
+
+        /** @var array{default_expense_account?: string|null, default_tax_type?: string|null, subsidiary_id?: string|null} $validated */
+        $validated = $request->validate([
+            'default_expense_account' => ['nullable', 'string', 'max:64'],
+            'default_tax_type' => ['nullable', 'string', 'max:64'],
+            'subsidiary_id' => ['nullable', 'string', 'max:64'],
+        ]);
+
+        $mapping = array_merge($connection->field_mapping_json ?? [], array_filter([
+            'default_expense_account' => $validated['default_expense_account'] ?? null,
+            'default_tax_type' => $validated['default_tax_type'] ?? null,
+            'subsidiary_id' => $validated['subsidiary_id'] ?? null,
+        ], static fn (?string $v): bool => is_string($v) && trim($v) !== ''));
+
+        $connection->update(['field_mapping_json' => $mapping]);
+
+        return back()->with('success', "Updated chart-of-accounts & tax mapping for '{$connection->name}'.");
     }
 
     public function storeWebhook(Request $request): RedirectResponse

@@ -392,6 +392,8 @@ async function submitMobileCapture(): Promise<void> {
             await enqueueOfflineScan({
                 id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
                 filename: selectedFile.value.name || 'mobile-capture.jpg',
+                mime_type: selectedFile.value.type || 'image/jpeg',
+                size_bytes: selectedFile.value.size,
                 title: captureTitle.value.trim() || 'Mobile Field Capture',
                 cabinet_id: cabinetId.value,
                 classification_level_id: clearanceLevelId.value,

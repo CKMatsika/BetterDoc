@@ -11,6 +11,7 @@ use App\Models\ApInvoice;
 use App\Models\Cabinet;
 use App\Models\ClearanceLevel;
 use App\Models\Document;
+use App\Models\ExchangeRate;
 use App\Models\GoodsReceipt;
 use App\Models\GoodsReceiptLine;
 use App\Models\PurchaseOrder;
@@ -19,6 +20,7 @@ use App\Models\User;
 use App\Models\Vendor;
 use App\Services\Audit\ImmutableAuditLogger;
 use App\Services\Finance\ApAutomationService;
+use App\Services\Finance\ZimbabweComplianceService;
 use App\Services\Integration\IntegrationWebhookService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -36,6 +38,7 @@ class FinanceController extends Controller
 {
     public function __construct(
         private readonly ApAutomationService $ap,
+        private readonly ZimbabweComplianceService $zimCompliance,
         private readonly ImmutableAuditLogger $audit,
         private readonly IntegrationWebhookService $webhooks,
     ) {}
@@ -49,7 +52,31 @@ class FinanceController extends Controller
             ->where('tenant_id', $user->tenant_id)
             ->orderBy('name')
             ->get()
-            ->toArray();
+            ->map(function (Vendor $v): array {
+                $compliance = $this->zimCompliance->evaluateVendorCompliance($v);
+
+                return [
+                    'id' => $v->id,
+                    'code' => $v->code,
+                    'name' => $v->name,
+                    'tax_id_tin' => $v->tax_id_tin,
+                    'vat_number' => $v->vat_number,
+                    'itf263_certificate_no' => $v->itf263_certificate_no,
+                    'itf263_expires_at' => $v->itf263_expires_at?->toDateString(),
+                    'itf263_document_id' => $v->itf263_document_id,
+                    'praz_registration_no' => $v->praz_registration_no,
+                    'praz_expires_at' => $v->praz_expires_at?->toDateString(),
+                    'nssa_clearance_no' => $v->nssa_clearance_no,
+                    'nssa_expires_at' => $v->nssa_expires_at?->toDateString(),
+                    'currency' => $v->currency,
+                    'peppol_endpoint_id' => $v->peppol_endpoint_id,
+                    'email' => $v->email,
+                    'is_active' => $v->is_active,
+                    'compliance' => $compliance,
+                ];
+            })
+            ->values()
+            ->all();
 
         $purchaseOrders = PurchaseOrder::query()
             ->with(['vendor', 'lines.receiptLines', 'goodsReceipts'])
@@ -103,12 +130,20 @@ class FinanceController extends Controller
                 'subtotal_cents' => $inv->subtotal_cents,
                 'vat_cents' => $inv->vat_cents,
                 'total_cents' => $inv->total_cents,
+                'wht_applicable' => $inv->wht_applicable,
+                'wht_rate_bps' => $inv->wht_rate_bps,
+                'wht_cents' => $inv->wht_cents,
+                'net_payable_cents' => $inv->net_payable_cents > 0 ? $inv->net_payable_cents : $inv->total_cents,
+                'exchange_rate_to_usd' => $inv->exchange_rate_to_usd,
+                'usd_equivalent_cents' => $inv->usd_equivalent_cents > 0 ? $inv->usd_equivalent_cents : $inv->total_cents,
                 'status' => $inv->status->value,
                 'match_mode' => $inv->match_mode,
                 'match_report' => $inv->match_report_json ?? [],
                 'zimra_fiscal_status' => $inv->zimra_fiscal_status->value,
                 'zimra_receipt_no' => $inv->zimra_receipt_no,
                 'zimra_qr_payload' => $inv->zimra_qr_payload,
+                'fdms_qr_verified' => $inv->fdms_qr_verified,
+                'fdms_verification' => $inv->fdms_verification_json ?? null,
                 'ubl_xml_hash' => $inv->ubl_xml_hash,
                 'approver_name' => $inv->approver?->name,
                 'lines' => $inv->lines->toArray(),
@@ -131,10 +166,27 @@ class FinanceController extends Controller
             ->get(['id', 'rank', 'name'])
             ->toArray();
 
+        $exchangeRates = ExchangeRate::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->orderByDesc('effective_date')
+            ->limit(20)
+            ->get()
+            ->map(static fn (ExchangeRate $r): array => [
+                'id' => $r->id,
+                'base_currency' => $r->base_currency,
+                'quote_currency' => $r->quote_currency,
+                'rate' => $r->rate,
+                'effective_date' => $r->effective_date->toDateString(),
+                'source' => $r->source,
+            ])
+            ->values()
+            ->all();
+
         return Inertia::render('Finance/Index', [
             'vendors' => $vendors,
             'purchaseOrders' => $purchaseOrders,
             'invoices' => $invoices,
+            'exchangeRates' => $exchangeRates,
             'clearedDocuments' => $documents,
             'cabinets' => $cabinets,
             'allowedClearances' => $levels,
@@ -486,5 +538,97 @@ class FinanceController extends Controller
         }
 
         return back()->with('success', "ZIMRA FDMS status: {$res['status']->value} ({$res['qr_payload']}).");
+    }
+
+    public function updateVendorCompliance(Request $request, Vendor $vendor): RedirectResponse|JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        abort_unless($vendor->tenant_id === $user->tenant_id, 404);
+
+        /** @var array{itf263_certificate_no?: string|null, itf263_expires_at?: string|null, itf263_document_id?: string|null, praz_registration_no?: string|null, praz_expires_at?: string|null, nssa_clearance_no?: string|null, nssa_expires_at?: string|null, cr6_document_id?: string|null, cr14_document_id?: string|null} $validated */
+        $validated = $request->validate([
+            'itf263_certificate_no' => ['nullable', 'string', 'max:64'],
+            'itf263_expires_at' => ['nullable', 'date'],
+            'itf263_document_id' => ['nullable', 'uuid'],
+            'praz_registration_no' => ['nullable', 'string', 'max:64'],
+            'praz_expires_at' => ['nullable', 'date'],
+            'nssa_clearance_no' => ['nullable', 'string', 'max:64'],
+            'nssa_expires_at' => ['nullable', 'date'],
+            'cr6_document_id' => ['nullable', 'uuid'],
+            'cr14_document_id' => ['nullable', 'uuid'],
+        ]);
+
+        $updated = $this->zimCompliance->updateVendorCompliance($vendor, $user, $validated, $request);
+        $summary = $this->zimCompliance->evaluateVendorCompliance($updated);
+
+        if ($request->wantsJson()) {
+            return response()->json(['vendor' => $updated, 'compliance' => $summary]);
+        }
+
+        return back()->with('success', "Updated Zimbabwe compliance pack for '{$updated->name}' ({$summary['completeness_percent']}% complete).");
+    }
+
+    public function storeExchangeRate(Request $request): RedirectResponse|JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        /** @var array{quote_currency: string, rate: float|int|string, effective_date: string, source?: string|null} $validated */
+        $validated = $request->validate([
+            'quote_currency' => ['required', 'string', Rule::in(['ZWG', 'ZAR', 'EUR', 'GBP', 'ZWL'])],
+            'rate' => ['required', 'numeric', 'gt:0'],
+            'effective_date' => ['required', 'date'],
+            'source' => ['nullable', 'string', 'max:64'],
+        ]);
+
+        $rate = $this->zimCompliance->recordExchangeRate(
+            actor: $user,
+            quoteCurrency: $validated['quote_currency'],
+            rate: (float) $validated['rate'],
+            effectiveDate: $validated['effective_date'],
+            source: (string) ($validated['source'] ?? 'RBZ Interbank'),
+            request: $request,
+        );
+
+        if ($request->wantsJson()) {
+            return response()->json(['exchange_rate' => $rate], 201);
+        }
+
+        return back()->with('success', "Recorded RBZ rate: 1 USD = {$rate->rate} {$rate->quote_currency} ({$rate->effective_date->toDateString()}).");
+    }
+
+    public function verifyFdmsQr(Request $request, ApInvoice $apInvoice): RedirectResponse|JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        abort_unless($apInvoice->tenant_id === $user->tenant_id, 404);
+        Gate::authorize('view', $apInvoice->document);
+
+        /** @var array{qr_payload: string} $validated */
+        $validated = $request->validate([
+            'qr_payload' => ['required', 'string', 'max:500'],
+        ]);
+
+        try {
+            $verified = $this->zimCompliance->verifyFdmsQrPayload($apInvoice, $validated['qr_payload'], $user, $request);
+        } catch (RuntimeException $e) {
+            throw ValidationException::withMessages(['qr_payload' => $e->getMessage()]);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'invoice' => $verified,
+                'fdms_qr_verified' => $verified->fdms_qr_verified,
+                'fdms_verification' => $verified->fdms_verification_json,
+            ]);
+        }
+
+        return back()->with(
+            $verified->fdms_qr_verified ? 'success' : 'error',
+            $verified->fdms_qr_verified
+                ? "ZIMRA FDMS QR verified ({$verified->zimra_receipt_no})."
+                : 'ZIMRA FDMS QR payload could not be verified — check receipt authenticity.'
+        );
     }
 }

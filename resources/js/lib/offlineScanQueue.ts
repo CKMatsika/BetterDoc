@@ -1,6 +1,8 @@
 export interface OfflineQueuedScan {
     id: string;
     filename: string;
+    mime_type: string;
+    size_bytes: number;
     title: string;
     cabinet_id: string;
     classification_level_id: string;

@@ -26,12 +26,20 @@ use Illuminate\Support\Carbon;
  * @property int $subtotal_cents
  * @property int $vat_cents
  * @property int $total_cents
+ * @property bool $wht_applicable
+ * @property int $wht_rate_bps
+ * @property int $wht_cents
+ * @property int $net_payable_cents
+ * @property float $exchange_rate_to_usd
+ * @property int $usd_equivalent_cents
  * @property ApInvoiceStatus $status
  * @property string $match_mode
  * @property array<string, mixed>|null $match_report_json
  * @property ZimraFiscalStatus $zimra_fiscal_status
  * @property string|null $zimra_receipt_no
  * @property string|null $zimra_qr_payload
+ * @property bool $fdms_qr_verified
+ * @property array<string, mixed>|null $fdms_verification_json
  * @property int $zimra_attempts
  * @property string|null $ubl_xml_hash
  * @property string|null $approved_by
@@ -55,12 +63,20 @@ class ApInvoice extends Model
         'subtotal_cents',
         'vat_cents',
         'total_cents',
+        'wht_applicable',
+        'wht_rate_bps',
+        'wht_cents',
+        'net_payable_cents',
+        'exchange_rate_to_usd',
+        'usd_equivalent_cents',
         'status',
         'match_mode',
         'match_report_json',
         'zimra_fiscal_status',
         'zimra_receipt_no',
         'zimra_qr_payload',
+        'fdms_qr_verified',
+        'fdms_verification_json',
         'zimra_attempts',
         'ubl_xml_hash',
         'approved_by',
@@ -78,9 +94,17 @@ class ApInvoice extends Model
             'subtotal_cents' => 'integer',
             'vat_cents' => 'integer',
             'total_cents' => 'integer',
+            'wht_applicable' => 'boolean',
+            'wht_rate_bps' => 'integer',
+            'wht_cents' => 'integer',
+            'net_payable_cents' => 'integer',
+            'exchange_rate_to_usd' => 'float',
+            'usd_equivalent_cents' => 'integer',
             'status' => ApInvoiceStatus::class,
             'match_report_json' => 'array',
             'zimra_fiscal_status' => ZimraFiscalStatus::class,
+            'fdms_qr_verified' => 'boolean',
+            'fdms_verification_json' => 'array',
             'zimra_attempts' => 'integer',
             'approved_at' => 'datetime',
         ];

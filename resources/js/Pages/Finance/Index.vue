@@ -15,16 +15,54 @@ import {
 } from '@lucide/vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
+interface ComplianceChecklistItem {
+    key: string;
+    label: string;
+    required_for: string;
+    status: string;
+    reference: string | null;
+    expires_at: string | null;
+    document_id: string | null;
+}
+
+interface VendorComplianceSummary {
+    itf263_status: string;
+    itf263_valid: boolean;
+    wht_required: boolean;
+    wht_rate_bps: number;
+    wht_rate_percent: number;
+    days_to_itf263_expiry: number | null;
+    completeness_percent: number;
+    checklist: ComplianceChecklistItem[];
+}
+
 interface VendorRow {
     id: string;
     code: string;
     name: string;
     tax_id_tin: string | null;
     vat_number: string | null;
+    itf263_certificate_no?: string | null;
+    itf263_expires_at?: string | null;
+    itf263_document_id?: string | null;
+    praz_registration_no?: string | null;
+    praz_expires_at?: string | null;
+    nssa_clearance_no?: string | null;
+    nssa_expires_at?: string | null;
     currency: string;
     peppol_endpoint_id: string | null;
     email: string | null;
     is_active: boolean;
+    compliance?: VendorComplianceSummary;
+}
+
+interface ExchangeRateRow {
+    id: string;
+    base_currency: string;
+    quote_currency: string;
+    rate: number;
+    effective_date: string;
+    source: string;
 }
 
 interface PoLineRow {
@@ -63,12 +101,20 @@ interface ApInvoiceRow {
     subtotal_cents: number;
     vat_cents: number;
     total_cents: number;
+    wht_applicable?: boolean;
+    wht_rate_bps?: number;
+    wht_cents?: number;
+    net_payable_cents?: number;
+    exchange_rate_to_usd?: number;
+    usd_equivalent_cents?: number;
     status: string;
     match_mode: string;
     match_report: Record<string, unknown>;
     zimra_fiscal_status: string;
     zimra_receipt_no: string | null;
     zimra_qr_payload: string | null;
+    fdms_qr_verified?: boolean;
+    fdms_verification?: Record<string, unknown> | null;
     ubl_xml_hash: string | null;
     approver_name: string | null;
     lines: {
@@ -86,14 +132,34 @@ const props = defineProps<{
     vendors: VendorRow[];
     purchaseOrders: PurchaseOrderRow[];
     invoices: ApInvoiceRow[];
+    exchangeRates?: ExchangeRateRow[];
     clearedDocuments: { id: string; doc_number: string; title: string; classification_rank: number }[];
     cabinets: { id: string; name: string }[];
     allowedClearances: { id: string; rank: number; name: string }[];
     canApproveInvoices: boolean;
 }>();
 
-const activeTab = ref<'invoices' | 'pos' | 'vendors'>('invoices');
+const activeTab = ref<'invoices' | 'pos' | 'vendors' | 'compliance'>('invoices');
 const overrideReasonMap = ref<Record<string, string>>({});
+const fdmsQrInputs = ref<Record<string, string>>({});
+
+const fxForm = useForm({
+    quote_currency: 'ZWG',
+    rate: 26.5,
+    effective_date: new Date().toISOString().slice(0, 10),
+    source: 'RBZ Interbank',
+});
+
+const complianceVendorId = ref<string>(props.vendors[0]?.id ?? '');
+const complianceForm = useForm({
+    itf263_certificate_no: props.vendors[0]?.itf263_certificate_no ?? '',
+    itf263_expires_at: props.vendors[0]?.itf263_expires_at ?? '',
+    itf263_document_id: props.vendors[0]?.itf263_document_id ?? '',
+    praz_registration_no: props.vendors[0]?.praz_registration_no ?? '',
+    praz_expires_at: props.vendors[0]?.praz_expires_at ?? '',
+    nssa_clearance_no: props.vendors[0]?.nssa_clearance_no ?? '',
+    nssa_expires_at: props.vendors[0]?.nssa_expires_at ?? '',
+});
 
 const vendorForm = useForm({
     code: '',
@@ -209,6 +275,40 @@ function fiscalizeInvoice(inv: ApInvoiceRow): void {
     router.post(`/finance/invoices/${inv.id}/fiscalize`, {}, { preserveScroll: true });
 }
 
+function verifyFdmsQr(inv: ApInvoiceRow): void {
+    const payload = (fdmsQrInputs.value[inv.id] ?? '').trim();
+    if (!payload) {
+        return;
+    }
+    router.post(`/finance/invoices/${inv.id}/verify-fdms-qr`, { qr_payload: payload }, { preserveScroll: true });
+}
+
+function submitExchangeRate(): void {
+    fxForm.post('/finance/exchange-rates', { preserveScroll: true });
+}
+
+function selectComplianceVendor(vendorId: string): void {
+    complianceVendorId.value = vendorId;
+    const v = props.vendors.find((x) => x.id === vendorId);
+    if (!v) {
+        return;
+    }
+    complianceForm.itf263_certificate_no = v.itf263_certificate_no ?? '';
+    complianceForm.itf263_expires_at = v.itf263_expires_at ?? '';
+    complianceForm.itf263_document_id = v.itf263_document_id ?? '';
+    complianceForm.praz_registration_no = v.praz_registration_no ?? '';
+    complianceForm.praz_expires_at = v.praz_expires_at ?? '';
+    complianceForm.nssa_clearance_no = v.nssa_clearance_no ?? '';
+    complianceForm.nssa_expires_at = v.nssa_expires_at ?? '';
+}
+
+function submitVendorCompliance(): void {
+    if (!complianceVendorId.value) {
+        return;
+    }
+    complianceForm.patch(`/finance/vendors/${complianceVendorId.value}/compliance`, { preserveScroll: true });
+}
+
 function formatMoney(cents: number, currency: string): string {
     return `${currency} ${(cents / 100).toFixed(2)}`;
 }
@@ -267,6 +367,14 @@ function statusPillClass(status: string): string {
                         :class="activeTab === 'vendors' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'"
                     >
                         Vendors ({{ vendors.length }})
+                    </button>
+                    <button
+                        type="button"
+                        @click="activeTab = 'compliance'"
+                        class="rounded-md px-3 py-1.5"
+                        :class="activeTab === 'compliance' ? 'bg-emerald-700 text-white' : 'text-emerald-700 hover:bg-emerald-50'"
+                    >
+                        ZIMRA ITF263, PRAZ &amp; RBZ FX
                     </button>
                 </div>
             </div>
@@ -473,6 +581,27 @@ function statusPillClass(status: string): string {
                                             <Send class="h-3 w-3" /> Fiscalize ZIMRA
                                         </button>
                                     </div>
+                                    <div v-if="inv.wht_applicable" class="rounded bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-900">
+                                        30% ZIMRA WHT: {{ formatMoney(inv.wht_cents ?? 0, inv.currency) }} · Net: {{ formatMoney(inv.net_payable_cents ?? inv.total_cents, inv.currency) }}
+                                    </div>
+                                    <div v-if="inv.currency !== 'USD' && inv.usd_equivalent_cents" class="text-[10px] font-mono text-slate-500">
+                                        USD Eq: {{ formatMoney(inv.usd_equivalent_cents, 'USD') }} (@ {{ inv.exchange_rate_to_usd }})
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <input
+                                            v-model="fdmsQrInputs[inv.id]"
+                                            type="text"
+                                            placeholder="Paste ZIMRA FDMS QR URL..."
+                                            class="w-36 rounded border border-slate-300 px-1.5 py-0.5 text-[10px] font-mono"
+                                        />
+                                        <button
+                                            type="button"
+                                            @click="verifyFdmsQr(inv)"
+                                            class="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-slate-700"
+                                        >
+                                            {{ inv.fdms_qr_verified ? 'QR Verified ✓' : 'Verify QR' }}
+                                        </button>
+                                    </div>
                                     <div v-if="canApproveInvoices && inv.status !== 'approved' && inv.status !== 'duplicate_blocked'" class="flex items-center gap-1">
                                         <input
                                             v-if="inv.status === 'variance_flagged'"
@@ -601,6 +730,129 @@ function statusPillClass(status: string): string {
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- TAB: ZIMBABWE COMPLIANCE (ITF263 / 30% WHT / PRAZ / NSSA) & RBZ ZWG/USD FX -->
+            <div v-if="activeTab === 'compliance'" class="space-y-6">
+                <!-- RBZ Official Exchange Rate Recorder -->
+                <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h2 class="text-sm font-bold text-slate-900">RBZ Multi-Currency Exchange Rates (ZWG / ZAR / USD)</h2>
+                            <p class="text-[11px] text-slate-500">
+                                Automatically locked onto ZWG &amp; ZAR invoices on capture for ZIMRA audit trails and USD reporting.
+                            </p>
+                        </div>
+                    </div>
+                    <form @submit.prevent="submitExchangeRate" class="grid grid-cols-1 gap-3 md:grid-cols-5 text-xs">
+                        <select v-model="fxForm.quote_currency" class="rounded-lg border border-slate-300 px-2.5 py-1.5">
+                            <option value="ZWG">USD / ZWG</option>
+                            <option value="ZAR">USD / ZAR</option>
+                            <option value="EUR">USD / EUR</option>
+                            <option value="GBP">USD / GBP</option>
+                        </select>
+                        <input v-model.number="fxForm.rate" type="number" step="0.0001" min="0.0001" required placeholder="Rate per 1 USD" class="rounded-lg border border-slate-300 px-2.5 py-1.5 font-mono" />
+                        <input v-model="fxForm.effective_date" type="date" required class="rounded-lg border border-slate-300 px-2.5 py-1.5" />
+                        <input v-model="fxForm.source" type="text" placeholder="RBZ Interbank" class="rounded-lg border border-slate-300 px-2.5 py-1.5" />
+                        <button type="submit" class="rounded-lg bg-slate-900 px-3 py-1.5 font-semibold text-white hover:bg-slate-800">
+                            Save Rate
+                        </button>
+                    </form>
+
+                    <div v-if="exchangeRates && exchangeRates.length > 0" class="flex flex-wrap gap-2 pt-1">
+                        <span
+                            v-for="r in exchangeRates.slice(0, 8)"
+                            :key="r.id"
+                            class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] text-slate-700"
+                        >
+                            1 {{ r.base_currency }} = <strong>{{ r.rate }} {{ r.quote_currency }}</strong> ({{ r.effective_date }} · {{ r.source }})
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Vendor ITF263 / PRAZ / NSSA Compliance Updater -->
+                <form @submit.prevent="submitVendorCompliance" class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4 text-xs">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h2 class="text-sm font-bold text-slate-900">Vendor ZIMRA ITF263 Tax Clearance, PRAZ &amp; NSSA Compliance</h2>
+                            <p class="text-[11px] text-slate-500">
+                                Missing or expired ZIMRA ITF263 automatically triggers 30% Withholding Tax (WHT) on AP invoices.
+                            </p>
+                        </div>
+                        <select
+                            :value="complianceVendorId"
+                            @change="selectComplianceVendor(($event.target as HTMLSelectElement).value)"
+                            class="rounded-lg border border-slate-300 px-3 py-1.5 font-semibold"
+                        >
+                            <option v-for="v in vendors" :key="v.id" :value="v.id">{{ v.name }} ({{ v.code }})</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+                        <input v-model="complianceForm.itf263_certificate_no" placeholder="ZIMRA ITF263 Cert No" class="rounded-lg border border-slate-300 px-2.5 py-1.5 font-mono" />
+                        <input v-model="complianceForm.itf263_expires_at" type="date" placeholder="ITF263 Expiry" class="rounded-lg border border-slate-300 px-2.5 py-1.5" />
+                        <select v-model="complianceForm.itf263_document_id" class="rounded-lg border border-slate-300 px-2.5 py-1.5">
+                            <option value="">Link ITF263 Vault PDF (Optional)</option>
+                            <option v-for="d in clearedDocuments" :key="d.id" :value="d.id">{{ d.doc_number }} — {{ d.title }}</option>
+                        </select>
+                        <input v-model="complianceForm.praz_registration_no" placeholder="PRAZ Registration No" class="rounded-lg border border-slate-300 px-2.5 py-1.5 font-mono" />
+                        <input v-model="complianceForm.praz_expires_at" type="date" placeholder="PRAZ Expiry" class="rounded-lg border border-slate-300 px-2.5 py-1.5" />
+                        <div class="grid grid-cols-2 gap-2">
+                            <input v-model="complianceForm.nssa_clearance_no" placeholder="NSSA Cert No" class="rounded-lg border border-slate-300 px-2 py-1.5 font-mono" />
+                            <input v-model="complianceForm.nssa_expires_at" type="date" class="rounded-lg border border-slate-300 px-2 py-1.5" />
+                        </div>
+                    </div>
+                    <button type="submit" class="rounded-lg bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800">
+                        Update Statutory Compliance Pack
+                    </button>
+                </form>
+
+                <!-- Vendor Compliance Scorecard -->
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <div v-for="v in vendors" :key="v.id" class="rounded-xl border border-slate-200 bg-white p-4 text-xs shadow-xs">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <p class="font-bold text-slate-900">{{ v.name }}</p>
+                                <p class="font-mono text-[11px] text-slate-500">{{ v.code }} · TIN: {{ v.tax_id_tin ?? 'Missing' }}</p>
+                            </div>
+                            <span
+                                class="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase"
+                                :class="v.compliance?.wht_required ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'"
+                            >
+                                {{ v.compliance?.wht_required ? '30% WHT Required' : 'ITF263 Valid' }}
+                            </span>
+                        </div>
+                        <div class="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                            <div
+                                class="h-full rounded-full bg-emerald-600"
+                                :style="{ width: `${v.compliance?.completeness_percent ?? 0}%` }"
+                            />
+                        </div>
+                        <p class="mt-1 text-[10px] font-semibold text-slate-600">
+                            Statutory Pack Completeness: {{ v.compliance?.completeness_percent ?? 0 }}%
+                        </p>
+                        <div v-if="v.compliance" class="mt-2 grid grid-cols-2 gap-1.5 text-[10px]">
+                            <div
+                                v-for="item in v.compliance.checklist"
+                                :key="item.key"
+                                class="flex items-center justify-between rounded bg-slate-50 px-2 py-1"
+                            >
+                                <span class="truncate font-medium text-slate-700">{{ item.label }}</span>
+                                <span
+                                    class="ml-1 font-bold uppercase"
+                                    :class="
+                                        item.status === 'valid'
+                                            ? 'text-emerald-700'
+                                            : item.status === 'expiring_soon'
+                                              ? 'text-amber-700'
+                                              : 'text-rose-700'
+                                    "
+                                >
+                                    {{ item.status }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

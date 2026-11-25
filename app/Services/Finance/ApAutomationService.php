@@ -38,6 +38,7 @@ class ApAutomationService
         private readonly ImmutableAuditLogger $audit,
         private readonly RealtimeNotificationService $notifications,
         private readonly BetterDocHttpClientGuard $guard,
+        private readonly ZimbabweComplianceService $zimCompliance,
     ) {}
 
     /**
@@ -57,9 +58,17 @@ class ApAutomationService
         ?Request $request = null,
     ): ApInvoice {
         $matchMode = ($header['match_mode'] ?? '3_way') === '2_way' ? '2_way' : '3_way';
+        $currency = strtoupper($header['currency'] ?? $vendor->currency);
+        $taxFx = $this->zimCompliance->computeInvoiceTaxAndFx(
+            vendor: $vendor,
+            currency: $currency,
+            invoiceDate: $header['invoice_date'],
+            subtotalCents: $header['subtotal_cents'],
+            totalCents: $header['total_cents'],
+        );
 
         /** @var ApInvoice $invoice */
-        $invoice = DB::transaction(function () use ($actor, $vendor, $document, $po, $header, $lines, $matchMode): ApInvoice {
+        $invoice = DB::transaction(function () use ($actor, $vendor, $document, $po, $header, $lines, $matchMode, $currency, $taxFx): ApInvoice {
             /** @var ApInvoice $created */
             $created = ApInvoice::query()->create([
                 'tenant_id' => $actor->tenant_id,
@@ -70,10 +79,16 @@ class ApAutomationService
                 'invoice_number' => trim($header['invoice_number']),
                 'invoice_date' => $header['invoice_date'],
                 'due_date' => $header['due_date'] ?? null,
-                'currency' => strtoupper($header['currency'] ?? $vendor->currency),
+                'currency' => $currency,
                 'subtotal_cents' => $header['subtotal_cents'],
                 'vat_cents' => $header['vat_cents'],
                 'total_cents' => $header['total_cents'],
+                'wht_applicable' => $taxFx['wht_applicable'],
+                'wht_rate_bps' => $taxFx['wht_rate_bps'],
+                'wht_cents' => $taxFx['wht_cents'],
+                'net_payable_cents' => $taxFx['net_payable_cents'],
+                'exchange_rate_to_usd' => $taxFx['exchange_rate_to_usd'],
+                'usd_equivalent_cents' => $taxFx['usd_equivalent_cents'],
                 'status' => ApInvoiceStatus::PendingMatch,
                 'match_mode' => $matchMode,
                 'zimra_fiscal_status' => ZimraFiscalStatus::Pending,
@@ -141,13 +156,22 @@ class ApAutomationService
         if (! $po instanceof PurchaseOrder) {
             $invoice->update([
                 'status' => ApInvoiceStatus::PendingMatch,
-                'match_report_json' => ['passed' => false, 'reason' => 'No Purchase Order linked for automated matching.'],
+                'match_report_json' => [
+                    'passed' => false,
+                    'reason' => 'No Purchase Order linked for automated matching.',
+                    'itf263_status' => $taxFx['itf263_status'],
+                    'wht_applicable' => $taxFx['wht_applicable'],
+                    'wht_cents' => $taxFx['wht_cents'],
+                ],
             ]);
 
             return $invoice->refresh();
         }
 
         $report = $this->evaluateMatch($invoice->load('lines'), $po->load('lines'), $matchMode);
+        $report['itf263_status'] = $taxFx['itf263_status'];
+        $report['wht_applicable'] = $taxFx['wht_applicable'];
+        $report['wht_cents'] = $taxFx['wht_cents'];
         $nextStatus = $report['passed'] ? ApInvoiceStatus::Matched : ApInvoiceStatus::VarianceFlagged;
 
         $highValueThreshold = config()->integer('betterdoc.finance.ap.high_value_approval_cents', 1000000);

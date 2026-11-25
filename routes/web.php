@@ -209,6 +209,9 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/finance/invoices/{apInvoice}/approve', [FinanceController::class, 'approveInvoice'])->name('finance.invoices.approve');
         Route::get('/finance/invoices/{apInvoice}/ubl', [FinanceController::class, 'exportUbl'])->name('finance.invoices.ubl');
         Route::post('/finance/invoices/{apInvoice}/fiscalize', [FinanceController::class, 'fiscalizeZimra'])->name('finance.invoices.fiscalize');
+        Route::post('/finance/invoices/{apInvoice}/verify-fdms-qr', [FinanceController::class, 'verifyFdmsQr'])->name('finance.invoices.verify_fdms_qr');
+        Route::patch('/finance/vendors/{vendor}/compliance', [FinanceController::class, 'updateVendorCompliance'])->name('finance.vendors.compliance');
+        Route::post('/finance/exchange-rates', [FinanceController::class, 'storeExchangeRate'])->name('finance.exchange_rates.store');
 
         Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
         Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');

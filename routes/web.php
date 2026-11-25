@@ -264,5 +264,11 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/admin/integrations/bridge-agents/{agent}/jobs', [IntegrationHubController::class, 'enqueueBridgeJob'])->name('admin.integrations.bridge.jobs.store');
         Route::post('/admin/integrations/bridge-agents/{agent}/revoke', [IntegrationHubController::class, 'revokeBridgeAgent'])->name('admin.integrations.bridge.revoke');
         Route::get('/admin/integrations/bridge-agents/{agent}/download-config', [IntegrationHubController::class, 'downloadBridgeConfig'])->name('admin.integrations.bridge.config');
+
+        // Mobile PWA — Snap & Manage + Auto-Invoice to Accounting ERP
+        Route::get('/mobile', [MobilePwaController::class, 'index'])->name('mobile.index');
+        Route::post('/mobile/capture', [MobilePwaController::class, 'capture'])->name('mobile.capture');
+        Route::post('/mobile/documents/{document}/process-invoice', [MobilePwaController::class, 'processInvoice'])->name('mobile.process_invoice');
+        Route::post('/mobile/documents/{document}/manage', [MobilePwaController::class, 'manageDocument'])->name('mobile.manage_document');
     });
 });

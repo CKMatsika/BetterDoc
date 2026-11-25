@@ -1,6 +1,6 @@
 // BetterDoc DMS Offline-First Air-Gap Service Worker
 // Strictly precaches static UI shell assets; never caches classified PDF streams or API payloads.
-const CACHE_NAME = 'betterdoc-dms-shell-v1';
+const CACHE_NAME = 'betterdoc-dms-shell-v2';
 const STATIC_ASSETS = [
     '/manifest.webmanifest',
     '/betterdoc-icon.svg',
@@ -36,7 +36,8 @@ self.addEventListener('fetch', (event) => {
         url.pathname.includes('/stream') ||
         url.pathname.includes('/download') ||
         url.pathname.includes('/preview') ||
-        url.pathname.startsWith('/wopi/')
+        url.pathname.startsWith('/wopi/') ||
+        url.pathname.startsWith('/api/')
     ) {
         return;
     }

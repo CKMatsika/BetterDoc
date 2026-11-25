@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\ErpBridgeApiController;
 use App\Http\Controllers\Api\V1\IntegrationApiController;
+use App\Http\Controllers\Api\V1\MobileCaptureApiController;
 use Illuminate\Support\Facades\Route;
 
 // Stage 3: Outbound-Only Windows LAN ERP Bridge Agent Endpoints (Sage Pastel Evolution / Partner & On-Prem Belina)
@@ -50,4 +51,18 @@ Route::prefix('v1')
         Route::post('/hr/employees', [IntegrationApiController::class, 'upsertHrEmployee'])
             ->middleware('api.ability:hr:sync')
             ->name('api.v1.hr.employees.upsert');
+
+        // Mobile Companion & PWA Smart Capture API (Ready for Flutter Phase 2)
+        Route::get('/mobile/bootstrap', [MobileCaptureApiController::class, 'bootstrap'])
+            ->middleware('api.ability:documents:read')
+            ->name('api.v1.mobile.bootstrap');
+        Route::post('/mobile/capture', [MobileCaptureApiController::class, 'capture'])
+            ->middleware('api.ability:documents:write')
+            ->name('api.v1.mobile.capture');
+        Route::post('/mobile/documents/{document}/process-invoice', [MobileCaptureApiController::class, 'processInvoice'])
+            ->middleware('api.ability:finance:sync')
+            ->name('api.v1.mobile.process_invoice');
+        Route::patch('/mobile/documents/{document}', [MobileCaptureApiController::class, 'updateDocument'])
+            ->middleware('api.ability:documents:write')
+            ->name('api.v1.mobile.documents.update');
     });

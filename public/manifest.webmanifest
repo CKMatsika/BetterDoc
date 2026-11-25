@@ -1,9 +1,11 @@
 {
-  "name": "BetterDoc DMS",
+  "name": "BetterDoc DMS — Mobile Capture & Vault",
   "short_name": "BetterDoc",
-  "description": "Offline-First Classified Document Management & Workflow Platform",
-  "start_url": "/dashboard",
+  "description": "Offline-first LAN & Cloud Document Capture, Smart Invoice-to-ERP Routing, and Encrypted Vault.",
+  "start_url": "/mobile",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#0F172A",
   "theme_color": "#0F172A",
   "icons": [
@@ -11,7 +13,27 @@
       "src": "/betterdoc-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Snap & Process Document",
+      "short_name": "Snap",
+      "url": "/mobile",
+      "icons": [{ "src": "/betterdoc-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Document Vault",
+      "short_name": "Vault",
+      "url": "/documents",
+      "icons": [{ "src": "/betterdoc-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Workflow Inbox",
+      "short_name": "Inbox",
+      "url": "/workflows/inbox",
+      "icons": [{ "src": "/betterdoc-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     }
   ]
 }

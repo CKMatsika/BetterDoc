@@ -1,15 +1,14 @@
 export interface OfflineQueuedScan {
     id: string;
     filename: string;
-    mime_type: string;
-    size_bytes: number;
+    title: string;
     cabinet_id: string;
     classification_level_id: string;
-    title: string;
     auto_split_barcode: boolean;
     auto_deskew: boolean;
-    queued_at: string;
+    force_invoice?: boolean;
     blob: Blob;
+    queued_at: string;
 }
 
 const DB_NAME = 'betterdoc_offline_scans_db';
@@ -29,11 +28,11 @@ function openDb(): Promise<IDBDatabase> {
     });
 }
 
-export async function enqueueOfflineScan(item: OfflineQueuedScan): Promise<void> {
+export async function enqueueOfflineScan(scan: OfflineQueuedScan): Promise<void> {
     const db = await openDb();
-    await new Promise<void>((resolve, reject) => {
+    return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, 'readwrite');
-        tx.objectStore(STORE_NAME).put(item);
+        tx.objectStore(STORE_NAME).put(scan);
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
     });
@@ -51,7 +50,7 @@ export async function listOfflineScans(): Promise<OfflineQueuedScan[]> {
 
 export async function removeOfflineScan(id: string): Promise<void> {
     const db = await openDb();
-    await new Promise<void>((resolve, reject) => {
+    return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, 'readwrite');
         tx.objectStore(STORE_NAME).delete(id);
         tx.oncomplete = () => resolve();

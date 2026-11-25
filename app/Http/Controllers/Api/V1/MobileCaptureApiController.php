@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\DocumentStatus;
+use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Cabinet;
 use App\Models\ClearanceLevel;
@@ -13,17 +14,82 @@ use App\Models\PurchaseOrder;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Services\Audit\ImmutableAuditLogger;
 use App\Services\Mobile\MobileCaptureService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class MobileCaptureApiController extends Controller
 {
     public function __construct(
         private readonly MobileCaptureService $mobileCapture,
+        private readonly ImmutableAuditLogger $audit,
     ) {}
+
+    public function login(Request $request): JsonResponse
+    {
+        /** @var array{email: string, password: string, device_name?: string|null} $validated */
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
+            'device_name' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        /** @var User|null $user */
+        $user = User::query()
+            ->with('tenant')
+            ->where('email', strtolower(trim($validated['email'])))
+            ->first();
+
+        if ($user === null || ! Hash::check($validated['password'], $user->password)) {
+            return response()->json(['message' => 'Invalid email or password.'], 401);
+        }
+
+        if ($user->status !== UserStatus::Active) {
+            return response()->json(['message' => 'Account is suspended or inactive.'], 403);
+        }
+
+        $deviceName = trim((string) ($validated['device_name'] ?? 'BetterDoc Flutter App'));
+        $token = $user->createToken($deviceName, ['documents:read', 'documents:write', 'finance:sync'])->plainTextToken;
+
+        $this->audit->log(
+            tenantId: $user->tenant_id,
+            eventType: 'auth.mobile_token_issued',
+            resourceType: 'user',
+            resourceId: $user->id,
+            actor: $user,
+            classificationRank: $user->clearance_rank,
+            after: ['device_name' => $deviceName],
+            request: $request,
+        );
+
+        return response()->json([
+            'token' => $token,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'clearance_rank' => $user->clearance_rank,
+            ],
+            'tenant' => [
+                'id' => $user->tenant_id,
+                'name' => $user->tenant->name ?? 'BetterDoc DMS',
+                'slug' => $user->tenant->slug ?? '',
+            ],
+        ]);
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $user->currentAccessToken()->delete();
+
+        return response()->json(['message' => 'Signed out cleanly.']);
+    }
 
     public function bootstrap(Request $request): JsonResponse
     {

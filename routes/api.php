@@ -16,6 +16,11 @@ Route::prefix('v1/webhooks/whatsapp')
         Route::post('/', [WhatsAppWebhookController::class, 'receive'])->name('api.v1.webhooks.whatsapp.receive');
     });
 
+// Flutter Mobile Companion Auth (Email + Password -> Scoped Sanctum Bearer Token)
+Route::post('v1/mobile/auth/login', [MobileCaptureApiController::class, 'login'])
+    ->middleware('throttle:10,1')
+    ->name('api.v1.mobile.auth.login');
+
 // Stage 3: Outbound-Only Windows LAN ERP Bridge Agent Endpoints (Sage Pastel Evolution / Partner & On-Prem Belina)
 Route::prefix('v1/bridge')
     ->middleware('throttle:60,1')
@@ -62,6 +67,8 @@ Route::prefix('v1')
             ->name('api.v1.hr.employees.upsert');
 
         // Mobile Companion & PWA Smart Capture API (Ready for Flutter Phase 2)
+        Route::post('/mobile/auth/logout', [MobileCaptureApiController::class, 'logout'])
+            ->name('api.v1.mobile.auth.logout');
         Route::get('/mobile/bootstrap', [MobileCaptureApiController::class, 'bootstrap'])
             ->middleware('api.ability:documents:read')
             ->name('api.v1.mobile.bootstrap');

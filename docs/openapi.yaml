@@ -171,3 +171,52 @@ paths:
       responses:
         "200":
           description: Timed DR verification report
+  /api/v1/health:
+    get:
+      summary: Sanctum Bearer token health and air-gap capability check
+      responses:
+        "200":
+          description: API v1 operational status
+  /api/v1/documents:
+    get:
+      summary: Search documents by query, policy_number, claim_number, or external_reference (PostgreSQL RLS enforced)
+      parameters:
+        - name: policy_number
+          in: query
+          schema:
+            type: string
+        - name: claim_number
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cleared tenant document list
+    post:
+      summary: Ingest ERP or insurance claim/policy document with optional file upload and external mapping
+      responses:
+        "201":
+          description: Document ingested and queued for webhook notification
+  /api/v1/finance/vendors:
+    get:
+      summary: List tenant vendors
+      responses:
+        "200":
+          description: Vendor list
+    post:
+      summary: Upsert ERP vendor and external ID mapping (Sage Pastel / Xero / NetSuite)
+      responses:
+        "201":
+          description: Vendor upserted
+  /api/v1/finance/invoices:
+    get:
+      summary: Pull matched/approved AP invoices for ERP posting
+      responses:
+        "200":
+          description: Matched/approved AP invoices
+  /api/v1/hr/employees:
+    post:
+      summary: Upsert Belina / HRIS employee record and HR personnel folder
+      responses:
+        "201":
+          description: Employee record synced

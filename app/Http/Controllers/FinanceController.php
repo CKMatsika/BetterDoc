@@ -19,6 +19,7 @@ use App\Models\User;
 use App\Models\Vendor;
 use App\Services\Audit\ImmutableAuditLogger;
 use App\Services\Finance\ApAutomationService;
+use App\Services\Integration\IntegrationWebhookService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,6 +37,7 @@ class FinanceController extends Controller
     public function __construct(
         private readonly ApAutomationService $ap,
         private readonly ImmutableAuditLogger $audit,
+        private readonly IntegrationWebhookService $webhooks,
     ) {}
 
     public function index(Request $request): Response
@@ -428,6 +430,20 @@ class FinanceController extends Controller
             }
             throw ValidationException::withMessages(['invoice' => $e->getMessage()]);
         }
+
+        $this->webhooks->emit(
+            tenantId: $user->tenant_id,
+            eventType: 'ap.invoice_approved',
+            data: [
+                'invoice_id' => $approved->id,
+                'invoice_number' => $approved->invoice_number,
+                'vendor_id' => $approved->vendor_id,
+                'currency' => $approved->currency,
+                'total_cents' => $approved->total_cents,
+                'document_id' => $approved->document_id,
+            ],
+            actor: $user,
+        );
 
         if ($request->wantsJson()) {
             return response()->json(['invoice' => $approved]);

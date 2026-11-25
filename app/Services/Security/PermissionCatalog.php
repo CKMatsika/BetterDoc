@@ -34,6 +34,7 @@ class PermissionCatalog
             'hr.manage',
             'audit.view',
             'compliance.export',
+            'integrations.manage',
         ];
     }
 

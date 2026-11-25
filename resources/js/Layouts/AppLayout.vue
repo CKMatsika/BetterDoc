@@ -24,6 +24,7 @@ import {
     UserCog,
     Users,
     KeyRound,
+    Webhook,
     CheckCircle2,
     AlertTriangle,
 } from '@lucide/vue';
@@ -99,6 +100,7 @@ const navItems = computed(() => [
     ...(user.value?.roles?.includes('SystemAdmin')
         ? [
               { label: 'Users & Roles', href: '/admin/users', icon: UserCog, badge: 0 },
+              { label: 'Integrations & ERP', href: '/admin/integrations', icon: Webhook, badge: 0 },
               { label: 'Branding & Portal', href: '/settings/branding', icon: Palette, badge: 0 },
           ]
         : []),

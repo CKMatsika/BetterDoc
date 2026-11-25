@@ -245,5 +245,18 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/admin/org-units', [UserManagementController::class, 'storeOrgUnit'])->name('admin.org_units.store');
         Route::post('/admin/users', [UserManagementController::class, 'store'])->name('admin.users.store');
         Route::patch('/admin/users/{targetUser}', [UserManagementController::class, 'updateAccess'])->name('admin.users.update');
+
+        // ERP Integration Hub (Stage 1: Scoped API Tokens, HMAC Webhooks, Insurance & Belina/Sage CSV Hub)
+        Route::get('/admin/integrations', [IntegrationHubController::class, 'index'])->name('admin.integrations');
+        Route::post('/admin/integrations/tokens', [IntegrationHubController::class, 'storeToken'])->name('admin.integrations.tokens.store');
+        Route::delete('/admin/integrations/tokens/{tokenId}', [IntegrationHubController::class, 'destroyToken'])->name('admin.integrations.tokens.destroy');
+        Route::post('/admin/integrations/connections', [IntegrationHubController::class, 'storeConnection'])->name('admin.integrations.connections.store');
+        Route::post('/admin/integrations/webhooks', [IntegrationHubController::class, 'storeWebhook'])->name('admin.integrations.webhooks.store');
+        Route::post('/admin/integrations/webhooks/test', [IntegrationHubController::class, 'testWebhook'])->name('admin.integrations.webhooks.test');
+        Route::post('/admin/integrations/import/belina-employees', [IntegrationHubController::class, 'importBelinaCsv'])->name('admin.integrations.import.belina');
+        Route::post('/admin/integrations/import/sage-vendors', [IntegrationHubController::class, 'importSageVendorsCsv'])->name('admin.integrations.import.sage');
+        Route::get('/admin/integrations/export/ap-invoices', [IntegrationHubController::class, 'exportInvoicesCsv'])->name('admin.integrations.export.invoices');
+        Route::get('/admin/integrations/export/belina-employees', [IntegrationHubController::class, 'exportBelinaCsv'])->name('admin.integrations.export.belina');
+        Route::get('/admin/integrations/templates/{kind}', [IntegrationHubController::class, 'downloadTemplate'])->name('admin.integrations.template');
     });
 });

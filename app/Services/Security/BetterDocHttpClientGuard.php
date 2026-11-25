@@ -28,6 +28,11 @@ class BetterDocHttpClientGuard
                 $allowed[] = strtolower($item);
             }
         }
+        foreach (config()->array('betterdoc.external_allowlist_hosts', []) as $item) {
+            if (is_string($item) && $item !== '') {
+                $allowed[] = strtolower($item);
+            }
+        }
         if (in_array($host, $allowed, true)) {
             return $request;
         }

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Http\Middleware\EnforceMfaMiddleware;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RequireApiAbility;
 use App\Http\Middleware\SecurityHeadersMiddleware;
+use App\Http\Middleware\SetApiPgSecurityContext;
 use App\Http\Middleware\SetPgSecurityContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,6 +17,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -41,6 +44,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'mfa.enforced' => EnforceMfaMiddleware::class,
+            'api.pg' => SetApiPgSecurityContext::class,
+            'api.ability' => RequireApiAbility::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

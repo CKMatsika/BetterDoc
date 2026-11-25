@@ -40,6 +40,10 @@ use Illuminate\Support\Carbon;
  * @property bool $client_e2ee
  * @property string|null $hr_subject_user_id
  * @property bool $hr_restricted_from_subject
+ * @property string|null $external_system
+ * @property string|null $external_reference
+ * @property string|null $policy_number
+ * @property string|null $claim_number
  * @property array<string, mixed>|null $metadata_json
  */
 class Document extends Model
@@ -73,6 +77,10 @@ class Document extends Model
         'client_e2ee',
         'hr_subject_user_id',
         'hr_restricted_from_subject',
+        'external_system',
+        'external_reference',
+        'policy_number',
+        'claim_number',
         'metadata_json',
     ];
 

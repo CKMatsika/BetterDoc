@@ -59,7 +59,7 @@ class HrVaultService
             [
                 'org_unit_id' => $employee->org_unit_id,
                 'path' => 'hr.emp.'.preg_replace('/[^a-z0-9_]/', '_', strtolower($employeeNumber)),
-                'default_classification_rank' => 2,
+                'default_classification_rank' => min(2, $hrActor->clearance_rank),
             ]
         );
 

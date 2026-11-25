@@ -20,6 +20,17 @@ Route::post('/demo-request', [DemoRequestController::class, 'store'])
 Route::get('/verify/{token}', [SignatureController::class, 'verifyToken'])
     ->middleware('throttle:public-verify')
     ->name('verify.token');
+
+// External Client / Broker / Supplier Self-Service Magic-Link Portal (Unauthenticated, Token + Optional OTP)
+Route::get('/portal/{token}', [ExternalPortalController::class, 'showPublic'])
+    ->middleware('throttle:public-verify')
+    ->name('portal.public.show');
+Route::post('/portal/{token}/upload', [ExternalPortalController::class, 'publicUpload'])
+    ->middleware('throttle:20,1')
+    ->name('portal.public.upload');
+Route::post('/portal/{token}/sign', [ExternalPortalController::class, 'publicSign'])
+    ->middleware('throttle:20,1')
+    ->name('portal.public.sign');
 Route::get('/pki/ca/{tenantId}/root.crt', [PkiController::class, 'downloadRootCa'])
     ->middleware('throttle:public-verify')
     ->name('pki.root_ca');
@@ -273,5 +284,12 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/mobile/capture', [MobilePwaController::class, 'capture'])->name('mobile.capture');
         Route::post('/mobile/documents/{document}/process-invoice', [MobilePwaController::class, 'processInvoice'])->name('mobile.process_invoice');
         Route::post('/mobile/documents/{document}/manage', [MobilePwaController::class, 'manageDocument'])->name('mobile.manage_document');
+
+        // External Client/Supplier Magic-Link Portal & WhatsApp Business Intake Hub
+        Route::get('/external-portal', [ExternalPortalController::class, 'index'])->name('portal.index');
+        Route::post('/external-portal', [ExternalPortalController::class, 'store'])->name('portal.store');
+        Route::post('/external-portal/{portalRequest}/revoke', [ExternalPortalController::class, 'revoke'])->name('portal.revoke');
+        Route::post('/external-portal/whatsapp/channels', [ExternalPortalController::class, 'storeWhatsAppChannel'])->name('portal.whatsapp.store');
+        Route::post('/external-portal/whatsapp/channels/{channel}/alert', [ExternalPortalController::class, 'sendWhatsAppAlert'])->name('portal.whatsapp.alert');
     });
 });

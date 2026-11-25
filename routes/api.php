@@ -5,7 +5,16 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\ErpBridgeApiController;
 use App\Http\Controllers\Api\V1\IntegrationApiController;
 use App\Http\Controllers\Api\V1\MobileCaptureApiController;
+use App\Http\Controllers\Api\V1\WhatsAppWebhookController;
 use Illuminate\Support\Facades\Route;
+
+// Gap 2: WhatsApp Business Cloud API Webhook (Challenge Verification & Signed HMAC-SHA256 Intake)
+Route::prefix('v1/webhooks/whatsapp')
+    ->middleware('throttle:120,1')
+    ->group(function (): void {
+        Route::get('/', [WhatsAppWebhookController::class, 'verify'])->name('api.v1.webhooks.whatsapp.verify');
+        Route::post('/', [WhatsAppWebhookController::class, 'receive'])->name('api.v1.webhooks.whatsapp.receive');
+    });
 
 // Stage 3: Outbound-Only Windows LAN ERP Bridge Agent Endpoints (Sage Pastel Evolution / Partner & On-Prem Belina)
 Route::prefix('v1/bridge')

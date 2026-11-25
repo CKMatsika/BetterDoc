@@ -1,0 +1,9 @@
+{
+  "betterdoc_url": "https://betterdoc.lan",
+  "erp_target": "sage_pastel_evolution",
+  "bridge_token": "",
+  "sage_evolution_odbc": "DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost\\SQLEXPRESS;DATABASE=SageEvolution;UID=betterdoc_ro;PWD=CHANGE_ME",
+  "vendors_csv_path": "C:\\Pastel\\Exports\\vendors.csv",
+  "belina_employees_csv_path": "C:\\Belina\\Exports\\employees.csv",
+  "invoice_export_dir": "C:\\Pastel\\BetterDocOutbox"
+}

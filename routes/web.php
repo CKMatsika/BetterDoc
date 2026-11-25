@@ -260,5 +260,9 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/admin/integrations/export/ap-invoices', [IntegrationHubController::class, 'exportInvoicesCsv'])->name('admin.integrations.export.invoices');
         Route::get('/admin/integrations/export/belina-employees', [IntegrationHubController::class, 'exportBelinaCsv'])->name('admin.integrations.export.belina');
         Route::get('/admin/integrations/templates/{kind}', [IntegrationHubController::class, 'downloadTemplate'])->name('admin.integrations.template');
+        Route::post('/admin/integrations/bridge-agents', [IntegrationHubController::class, 'storeBridgeAgent'])->name('admin.integrations.bridge.store');
+        Route::post('/admin/integrations/bridge-agents/{agent}/jobs', [IntegrationHubController::class, 'enqueueBridgeJob'])->name('admin.integrations.bridge.jobs.store');
+        Route::post('/admin/integrations/bridge-agents/{agent}/revoke', [IntegrationHubController::class, 'revokeBridgeAgent'])->name('admin.integrations.bridge.revoke');
+        Route::get('/admin/integrations/bridge-agents/{agent}/download-config', [IntegrationHubController::class, 'downloadBridgeConfig'])->name('admin.integrations.bridge.config');
     });
 });

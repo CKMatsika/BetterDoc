@@ -37,6 +37,26 @@ interface SyncRunItem {
     finished_at: string | null;
 }
 
+interface BridgeAgentItem {
+    id: string;
+    name: string;
+    erp_target: string;
+    hostname: string | null;
+    agent_version: string | null;
+    status: string;
+    last_heartbeat_at: string | null;
+    last_ip: string | null;
+}
+
+interface BridgeJobItem {
+    id: string;
+    agent_name: string;
+    job_type: string;
+    status: string;
+    error_message: string | null;
+    completed_at: string | null;
+}
+
 interface WebhookItem {
     id: string;
     name: string;
@@ -77,6 +97,10 @@ const props = defineProps<{
     availableAbilities: string[];
     connections: ConnectionItem[];
     syncRuns: SyncRunItem[];
+    bridgeAgents: BridgeAgentItem[];
+    bridgeJobs: BridgeJobItem[];
+    bridgeTargetOptions: SystemOption[];
+    issuedBridgePairingCode: string | null;
     webhooks: WebhookItem[];
     deliveries: DeliveryItem[];
     mappings: MappingItem[];
@@ -133,6 +157,26 @@ const belinaCsvForm = useForm<{ csv_file: File | null }>({
 const sageCsvForm = useForm<{ csv_file: File | null }>({
     csv_file: null,
 });
+
+const bridgeForm = useForm({
+    name: '',
+    erp_target: props.bridgeTargetOptions[0]?.value ?? 'sage_pastel_evolution',
+});
+
+function createBridgeAgent(): void {
+    bridgeForm.post('/admin/integrations/bridge-agents', {
+        preserveScroll: true,
+        onSuccess: () => bridgeForm.reset('name'),
+    });
+}
+
+function queueBridgeJob(agentId: string, jobType: 'health_check' | 'pull_vendors' | 'pull_purchase_orders' | 'push_invoices' | 'pull_employees'): void {
+    router.post(`/admin/integrations/bridge-agents/${agentId}/jobs`, { job_type: jobType }, { preserveScroll: true });
+}
+
+function revokeBridge(agentId: string): void {
+    router.post(`/admin/integrations/bridge-agents/${agentId}/revoke`, {}, { preserveScroll: true });
+}
 
 function toggleItem(list: string[], value: string): void {
     const idx = list.indexOf(value);
@@ -222,9 +266,9 @@ function handleFileSelect(target: 'belina' | 'sage', event: Event): void {
         <div class="space-y-6">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <h1 class="text-xl font-bold text-slate-900">ERP, Insurance &amp; Payroll Integration Hub (Stage 1 &amp; 2)</h1>
+                    <h1 class="text-xl font-bold text-slate-900">ERP, Insurance &amp; Payroll Integration Hub (Stages 1–3)</h1>
                     <p class="text-xs text-slate-600">
-                        Manage scoped Sanctum REST API v1 tokens, signed HMAC webhooks, native Xero &amp; NetSuite cloud connectors, and batch CSV bridges for Sage Pastel &amp; Belina Payroll.
+                        Manage scoped Sanctum REST API v1 tokens, signed HMAC webhooks, native Xero &amp; NetSuite cloud connectors, Windows LAN ERP bridges (Sage Pastel Evolution / Belina), and batch CSV sync.
                     </p>
                 </div>
                 <button
@@ -603,6 +647,116 @@ function handleFileSelect(target: 'belina' | 'sage', event: Event): void {
                     </form>
                 </section>
             </div>
+
+            <!-- One-Time LAN Bridge Pairing Code Banner -->
+            <div
+                v-if="issuedBridgePairingCode"
+                role="status"
+                class="rounded-[14px] border-2 border-amber-500 bg-amber-50 p-4 text-xs text-[#0F172A] space-y-2"
+            >
+                <p class="font-bold text-amber-900">
+                    Windows LAN ERP Bridge Pairing Code — Valid 24h (shown once only):
+                </p>
+                <pre class="overflow-x-auto rounded-lg bg-[#0F172A] p-3 font-mono text-xs text-amber-300 select-all">python bridge.py --config config.json --pair {{ issuedBridgePairingCode }}</pre>
+            </div>
+
+            <!-- Windows LAN ERP Bridge Agents (Stage 3: Sage Pastel Evolution / Partner & On-Prem Belina) -->
+            <section class="rounded-[14px] border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-900">Windows LAN ERP Bridge Agents (Stage 3 — Zero Inbound Ports)</h2>
+                        <p class="text-xs text-slate-600">
+                            Deploy <code class="font-mono">services/betterdoc-erp-bridge/bridge.py</code> on your Windows Sage Pastel Evolution or Belina server. The agent polls outbound HTTPS only.
+                        </p>
+                    </div>
+                </div>
+
+                <form @submit.prevent="createBridgeAgent" class="grid grid-cols-1 gap-3 sm:grid-cols-12">
+                    <div class="sm:col-span-5">
+                        <label class="block text-xs font-semibold text-slate-700">Bridge Agent Label *</label>
+                        <input
+                            v-model="bridgeForm.name"
+                            type="text"
+                            required
+                            placeholder="e.g. Harare HQ Sage Evolution Server"
+                            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                        />
+                    </div>
+                    <div class="sm:col-span-4">
+                        <label class="block text-xs font-semibold text-slate-700">On-Prem ERP Target *</label>
+                        <select v-model="bridgeForm.erp_target" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
+                            <option v-for="opt in bridgeTargetOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-3 flex items-end">
+                        <button
+                            type="submit"
+                            :disabled="bridgeForm.processing"
+                            class="w-full rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800"
+                        >
+                            Create &amp; Generate Pairing Code
+                        </button>
+                    </div>
+                </form>
+
+                <div v-if="bridgeAgents.length > 0" class="space-y-3">
+                    <div v-for="agent in bridgeAgents" :key="agent.id" class="rounded-lg border border-slate-200 bg-slate-50 p-3.5 text-xs space-y-2.5">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <p class="font-bold text-slate-900">{{ agent.name }}</p>
+                                <p class="font-mono text-[11px] text-slate-600">
+                                    {{ agent.erp_target }} · Host: {{ agent.hostname ?? 'Awaiting pairing' }} · Status: {{ agent.status }}
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap gap-1.5">
+                                <a
+                                    :href="`/admin/integrations/bridge-agents/${agent.id}/download-config`"
+                                    class="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2.5 py-1 font-semibold text-slate-800 hover:bg-slate-100"
+                                >
+                                    <Download class="h-3 w-3" /> Config JSON
+                                </a>
+                                <button
+                                    v-if="agent.status !== 'revoked'"
+                                    type="button"
+                                    @click="revokeBridge(agent.id)"
+                                    class="rounded border border-red-200 bg-white px-2.5 py-1 font-semibold text-red-700 hover:bg-red-50"
+                                >
+                                    Revoke
+                                </button>
+                            </div>
+                        </div>
+
+                        <div v-if="agent.status !== 'revoked'" class="flex flex-wrap gap-1.5">
+                            <button type="button" @click="queueBridgeJob(agent.id, 'health_check')" class="rounded border border-slate-300 bg-white px-2.5 py-1 font-semibold text-slate-800 hover:bg-slate-100">Queue Health Ping</button>
+                            <button type="button" @click="queueBridgeJob(agent.id, 'pull_vendors')" class="rounded border border-slate-300 bg-white px-2.5 py-1 font-semibold text-slate-800 hover:bg-slate-100">Queue Pull Vendors</button>
+                            <button type="button" @click="queueBridgeJob(agent.id, 'pull_purchase_orders')" class="rounded border border-slate-300 bg-white px-2.5 py-1 font-semibold text-slate-800 hover:bg-slate-100">Queue Pull POs</button>
+                            <button type="button" @click="queueBridgeJob(agent.id, 'pull_employees')" class="rounded border border-slate-300 bg-white px-2.5 py-1 font-semibold text-slate-800 hover:bg-slate-100">Queue Pull Belina Employees</button>
+                            <button type="button" @click="queueBridgeJob(agent.id, 'push_invoices')" class="rounded bg-[#0E7C66] px-2.5 py-1 font-semibold text-white hover:opacity-95">Queue Push Approved Invoices</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="bridgeJobs.length > 0" class="overflow-x-auto pt-2">
+                    <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+                        <thead class="bg-slate-50 font-semibold text-slate-600 uppercase">
+                            <tr>
+                                <th class="px-3 py-2">Bridge Agent</th>
+                                <th class="px-3 py-2">Job Type</th>
+                                <th class="px-3 py-2">Status</th>
+                                <th class="px-3 py-2">Note</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr v-for="j in bridgeJobs" :key="j.id">
+                                <td class="px-3 py-2 font-semibold text-slate-900">{{ j.agent_name }}</td>
+                                <td class="px-3 py-2 font-mono text-slate-700">{{ j.job_type }}</td>
+                                <td class="px-3 py-2 font-mono">{{ j.status }}</td>
+                                <td class="px-3 py-2 text-slate-600">{{ j.error_message ?? 'OK' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
             <!-- Cloud ERP Sync Runs Log -->
             <section class="rounded-[14px] border border-slate-200 bg-white p-5 shadow-xs space-y-3">

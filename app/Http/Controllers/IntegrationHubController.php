@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\BetterDocRole;
 use App\Enums\ErpSystemType;
+use App\Models\ErpBridgeAgent;
+use App\Models\ErpBridgeJob;
 use App\Models\ExternalMapping;
 use App\Models\IntegrationConnection;
 use App\Models\IntegrationDelivery;
@@ -15,6 +17,7 @@ use App\Models\User;
 use App\Services\Audit\ImmutableAuditLogger;
 use App\Services\Integration\Connectors\ErpConnectorManager;
 use App\Services\Integration\ErpBatchSyncService;
+use App\Services\Integration\ErpBridgeService;
 use App\Services\Integration\IntegrationWebhookService;
 use App\Services\Security\PermissionCatalog;
 use Illuminate\Http\RedirectResponse;
@@ -43,6 +46,7 @@ class IntegrationHubController extends Controller
         private readonly ErpBatchSyncService $batchSync,
         private readonly IntegrationWebhookService $webhooks,
         private readonly ErpConnectorManager $connectors,
+        private readonly ErpBridgeService $bridge,
         private readonly ImmutableAuditLogger $audit,
     ) {}
 
@@ -153,11 +157,49 @@ class IntegrationHubController extends Controller
             'label' => $case->label(),
         ], ErpSystemType::cases());
 
+        $bridgeAgents = ErpBridgeAgent::query()
+            ->where('tenant_id', $actor->tenant_id)
+            ->latest()
+            ->get()
+            ->map(static fn (ErpBridgeAgent $a): array => [
+                'id' => $a->id,
+                'name' => $a->name,
+                'erp_target' => $a->erp_target,
+                'hostname' => $a->hostname,
+                'agent_version' => $a->agent_version,
+                'status' => $a->status,
+                'last_heartbeat_at' => $a->last_heartbeat_at?->toIso8601String(),
+                'last_ip' => $a->last_ip,
+            ])
+            ->values()
+            ->all();
+
+        $bridgeJobs = ErpBridgeJob::query()
+            ->with(['agent'])
+            ->where('tenant_id', $actor->tenant_id)
+            ->latest()
+            ->limit(25)
+            ->get()
+            ->map(static fn (ErpBridgeJob $j): array => [
+                'id' => $j->id,
+                'agent_name' => $j->agent->name ?? 'Bridge Agent',
+                'job_type' => $j->job_type,
+                'status' => $j->status,
+                'error_message' => $j->error_message,
+                'completed_at' => $j->completed_at?->toIso8601String(),
+            ])
+            ->values()
+            ->all();
+
         return Inertia::render('Admin/Integrations', [
             'tokens' => $tokens,
             'availableAbilities' => self::API_ABILITIES,
             'connections' => $connections,
             'syncRuns' => $syncRuns,
+            'bridgeAgents' => $bridgeAgents,
+            'bridgeJobs' => $bridgeJobs,
+            'bridgeTargetOptions' => ErpBridgeService::targetOptions(),
+            'issuedBridgePairingCode' => $request->session()->pull('issued_bridge_pairing_code'),
             'webhooks' => $webhooks,
             'deliveries' => $deliveries,
             'mappings' => $mappings,
@@ -492,6 +534,91 @@ class IntegrationHubController extends Controller
 
         return response($content, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
+    public function storeBridgeAgent(Request $request): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+        $this->authorizeIntegrations($actor);
+
+        /** @var array{name: string, erp_target: string, integration_connection_id?: string|null} $validated */
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'min:2', 'max:120'],
+            'erp_target' => ['required', Rule::in(['sage_pastel_evolution', 'sage_pastel_partner', 'belina_payroll', 'custom_lan_erp'])],
+            'integration_connection_id' => ['nullable', 'uuid'],
+        ]);
+
+        $res = $this->bridge->initiatePairing(
+            actor: $actor,
+            name: $validated['name'],
+            erpTarget: $validated['erp_target'],
+            connectionId: $validated['integration_connection_id'] ?? null,
+            request: $request,
+        );
+
+        return back()
+            ->with('issued_bridge_pairing_code', $res['pairing_code'])
+            ->with('success', "Windows LAN Bridge '{$res['agent']->name}' created. Copy the one-time pairing code below (valid 24h).");
+    }
+
+    public function enqueueBridgeJob(Request $request, ErpBridgeAgent $agent): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+        $this->authorizeIntegrations($actor);
+        abort_unless($agent->tenant_id === $actor->tenant_id, 404);
+
+        /** @var array{job_type: string} $validated */
+        $validated = $request->validate([
+            'job_type' => ['required', Rule::in(['health_check', 'pull_vendors', 'pull_purchase_orders', 'push_invoices', 'pull_employees'])],
+        ]);
+
+        if ($agent->status === 'revoked') {
+            return back()->with('error', 'Cannot queue jobs for a revoked bridge agent.');
+        }
+
+        $job = $this->bridge->enqueueJob($actor, $agent, $validated['job_type'], $request);
+
+        return back()->with('success', "Queued '{$job->job_type}' job for LAN Bridge '{$agent->name}'.");
+    }
+
+    public function revokeBridgeAgent(Request $request, ErpBridgeAgent $agent): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+        $this->authorizeIntegrations($actor);
+        abort_unless($agent->tenant_id === $actor->tenant_id, 404);
+
+        $this->bridge->revokeAgent($actor, $agent, $request);
+
+        return back()->with('success', "LAN Bridge Agent '{$agent->name}' revoked.");
+    }
+
+    public function downloadBridgeConfig(Request $request, ErpBridgeAgent $agent): HttpResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+        $this->authorizeIntegrations($actor);
+        abort_unless($agent->tenant_id === $actor->tenant_id, 404);
+
+        $config = [
+            'betterdoc_url' => rtrim(config()->string('app.url', 'https://betterdoc.lan'), '/'),
+            'erp_target' => $agent->erp_target,
+            'bridge_token' => '',
+            'sage_evolution_odbc' => 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost\\SQLEXPRESS;DATABASE=SageEvolution;UID=betterdoc_ro;PWD=CHANGE_ME',
+            'vendors_csv_path' => 'C:\\Pastel\\Exports\\vendors.csv',
+            'belina_employees_csv_path' => 'C:\\Belina\\Exports\\employees.csv',
+            'invoice_export_dir' => 'C:\\Pastel\\BetterDocOutbox',
+        ];
+
+        $json = json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        $filename = 'betterdoc-bridge-'.preg_replace('/[^a-z0-9_-]/i', '-', strtolower($agent->name)).'.json';
+
+        return response($json, 200, [
+            'Content-Type' => 'application/json; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }

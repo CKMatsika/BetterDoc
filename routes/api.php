@@ -2,8 +2,21 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\ErpBridgeApiController;
 use App\Http\Controllers\Api\V1\IntegrationApiController;
 use Illuminate\Support\Facades\Route;
+
+// Stage 3: Outbound-Only Windows LAN ERP Bridge Agent Endpoints (Sage Pastel Evolution / Partner & On-Prem Belina)
+Route::prefix('v1/bridge')
+    ->middleware('throttle:60,1')
+    ->group(function (): void {
+        Route::post('/pair', [ErpBridgeApiController::class, 'pair'])
+            ->middleware('throttle:20,1')
+            ->name('api.v1.bridge.pair');
+        Route::post('/heartbeat', [ErpBridgeApiController::class, 'heartbeat'])->name('api.v1.bridge.heartbeat');
+        Route::post('/poll', [ErpBridgeApiController::class, 'poll'])->name('api.v1.bridge.poll');
+        Route::post('/jobs/{jobId}/complete', [ErpBridgeApiController::class, 'completeJob'])->name('api.v1.bridge.complete');
+    });
 
 Route::prefix('v1')
     ->middleware(['auth:sanctum', 'api.pg', 'throttle:120,1'])
